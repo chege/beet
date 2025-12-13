@@ -23,7 +23,7 @@ func TestBuildWorkPromptInjectsGuidelines(t *testing.T) {
 		{name: "beta", content: "ship it"},
 	}
 	out := buildWorkPrompt("default", template, guides, "do the thing")
-	if !containsAll(out, []string{"do the thing", "keep it short", "beta", "Internal instruction"}) {
+	if !containsAll(out, []string{"do the thing", "keep it short", "ship it", "Internal instruction"}) {
 		t.Fatalf("work prompt missing expected content: %s", out)
 	}
 }
@@ -35,6 +35,20 @@ func containsAll(haystack string, needles []string) bool {
 		}
 	}
 	return true
+}
+
+func TestFormatGuidelinesVerbatim(t *testing.T) {
+	guidelines := []guideline{
+		{name: "alpha", content: "first line\n- bullet"},
+		{name: "beta", content: "second\nline"},
+	}
+
+	got := formatGuidelines(guidelines)
+	want := "first line\n- bullet\n\nsecond\nline"
+
+	if got != want {
+		t.Fatalf("formatGuidelines = %q, want %q", got, want)
+	}
 }
 
 func TestWriteWorkPrompt(t *testing.T) {
@@ -87,9 +101,9 @@ func TestWriteAgentsCreatesFile(t *testing.T) {
 	if !strings.Contains(string(content), "Agents") {
 		t.Fatalf("agents file missing header: %s", string(content))
 	}
-	for name := range defaultGuidelines {
-		if !strings.Contains(string(content), strings.TrimSuffix(name, filepath.Ext(name))) {
-			t.Fatalf("agents file missing guideline name %s", name)
+	for _, text := range defaultGuidelines {
+		if !strings.Contains(string(content), text) {
+			t.Fatalf("agents file missing guideline content %q", text)
 		}
 	}
 }

@@ -18,7 +18,7 @@ type guideline struct {
 
 func renderTemplate(template, intent, guidelines string) string {
 	rendered := strings.ReplaceAll(template, "{{intent}}", strings.TrimSpace(intent))
-	return strings.ReplaceAll(rendered, "{{guidelines}}", strings.TrimSpace(guidelines))
+	return strings.ReplaceAll(rendered, "{{guidelines}}", guidelines)
 }
 
 func buildWorkPrompt(templateName, template string, guidelines []guideline, intent string) string {
@@ -38,11 +38,12 @@ func formatGuidelines(guidelines []guideline) string {
 		return ""
 	}
 
-	var b strings.Builder
+	parts := make([]string, 0, len(guidelines))
 	for _, g := range guidelines {
-		b.WriteString(fmt.Sprintf("%s: %s\n", g.name, g.content))
+		parts = append(parts, g.content)
 	}
-	return strings.TrimSpace(b.String())
+
+	return strings.Join(parts, "\n\n")
 }
 
 func buildWorkPromptContent(configDir, templateName, intent string) (string, error) {
