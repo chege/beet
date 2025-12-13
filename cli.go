@@ -13,7 +13,17 @@ import (
 
 import "github.com/pkg/browser"
 
-var openFileWithDefault = browser.OpenFile
+type browserOpener interface {
+	OpenFile(path string) error
+}
+
+type pkgBrowser struct{}
+
+func (pkgBrowser) OpenFile(path string) error {
+	return browser.OpenFile(path)
+}
+
+var defaultBrowser browserOpener = pkgBrowser{}
 var waitForEdit = func(path string) error {
 	if _, err := fmt.Fprintf(os.Stdout, "Edit intent in %s, then press Enter to continue: ", path); err != nil {
 		return err
@@ -197,7 +207,7 @@ func intentFromDefaultApp() (string, error) {
 		return "", fmt.Errorf("close temp file: %w", err)
 	}
 
-	if err := openFileWithDefault(tmp.Name()); err != nil {
+	if err := defaultBrowser.OpenFile(tmp.Name()); err != nil {
 		return "", fmt.Errorf("open default app: %w", err)
 	}
 

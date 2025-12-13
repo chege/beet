@@ -8,6 +8,10 @@ import (
 	"testing"
 )
 
+type browserFake func(string) error
+
+func (f browserFake) OpenFile(path string) error { return f(path) }
+
 func TestHandleGenerateCreatesWorkPrompt(t *testing.T) {
 	configDir := filepath.Join(t.TempDir(), "cfg")
 	if err := ensureConfigStructure(configDir); err != nil {
@@ -111,16 +115,16 @@ func TestParseIntentFromEditor(t *testing.T) {
 }
 
 func TestIntentFromDefaultAppFallback(t *testing.T) {
-	origOpen := openFileWithDefault
+	origOpen := defaultBrowser
 	origWait := waitForEdit
 	t.Cleanup(func() {
-		openFileWithDefault = origOpen
+		defaultBrowser = origOpen
 		waitForEdit = origWait
 	})
 
-	openFileWithDefault = func(path string) error {
+	defaultBrowser = browserFake(func(path string) error {
 		return os.WriteFile(path, []byte("from default app"), 0o644)
-	}
+	})
 	waitForEdit = func(string) error { return nil }
 	t.Setenv("EDITOR", "")
 
