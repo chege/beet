@@ -1,6 +1,8 @@
 package main
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -33,4 +35,32 @@ func containsAll(haystack string, needles []string) bool {
 		}
 	}
 	return true
+}
+
+func TestWriteWorkPrompt(t *testing.T) {
+	configDir := filepath.Join(t.TempDir(), "cfg")
+	if err := ensureConfigStructure(configDir); err != nil {
+		t.Fatalf("ensureConfigStructure returned error: %v", err)
+	}
+	if err := bootstrapDefaults(configDir); err != nil {
+		t.Fatalf("bootstrapDefaults returned error: %v", err)
+	}
+
+	output := filepath.Join(t.TempDir(), "WORK_PROMPT.md")
+	intent := "ship the feature"
+	if err := writeWorkPrompt(configDir, "", intent, output); err != nil {
+		t.Fatalf("writeWorkPrompt returned error: %v", err)
+	}
+
+	b, err := os.ReadFile(output)
+	if err != nil {
+		t.Fatalf("read WORK_PROMPT: %v", err)
+	}
+	content := string(b)
+
+	for _, expected := range []string{intent, "Internal instruction", "Template: default"} {
+		if !strings.Contains(content, expected) {
+			t.Fatalf("expected content to contain %q; got %s", expected, content)
+		}
+	}
 }

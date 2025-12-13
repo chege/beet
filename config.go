@@ -102,12 +102,7 @@ func listTemplates(configDir string) ([]string, error) {
 }
 
 func loadTemplate(configDir, name string) (string, error) {
-	if name == "" {
-		name = defaultTemplateName
-	}
-	if !strings.HasSuffix(name, ".md") {
-		name += ".md"
-	}
+	name = normalizeTemplateName(name)
 
 	path := filepath.Join(configDir, templatesDirName, name)
 	b, err := os.ReadFile(path)
@@ -143,6 +138,16 @@ func loadGuidelines(configDir string) ([]guideline, error) {
 	}
 
 	return out, nil
+}
+
+func normalizeTemplateName(name string) string {
+	if name == "" {
+		name = defaultTemplateName
+	}
+	if !strings.HasSuffix(name, ".md") {
+		name += ".md"
+	}
+	return name
 }
 
 func prepareConfig() (string, error) {

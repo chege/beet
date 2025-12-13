@@ -2,10 +2,13 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 )
 
 const internalInstruction = "Internal instruction: clarify, rephrase, infer reasonable gaps, adhere to the template, and output only the final instruction text."
+const workPromptFilename = "WORK_PROMPT.md"
 
 type guideline struct {
 	name    string
@@ -39,4 +42,31 @@ func formatGuidelines(guidelines []guideline) string {
 		b.WriteString(fmt.Sprintf("%s: %s\n", g.name, g.content))
 	}
 	return strings.TrimSpace(b.String())
+}
+
+func writeWorkPrompt(configDir, templateName, intent, outputPath string) error {
+	normalized := normalizeTemplateName(templateName)
+
+	template, err := loadTemplate(configDir, templateName)
+	if err != nil {
+		return err
+	}
+
+	guidelines, err := loadGuidelines(configDir)
+	if err != nil {
+		return err
+	}
+
+	label := strings.TrimSuffix(normalized, filepath.Ext(normalized))
+	content := buildWorkPrompt(label, template, guidelines, intent)
+
+	if outputPath == "" {
+		outputPath = workPromptFilename
+	}
+
+	if err := os.WriteFile(outputPath, []byte(content), 0o644); err != nil {
+		return fmt.Errorf("write %s: %w", outputPath, err)
+	}
+
+	return nil
 }
