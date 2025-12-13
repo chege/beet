@@ -32,7 +32,7 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: "daily"
     open-pull-requests-limit: 5
     target-branch: "main"
     commit-message:
@@ -43,26 +43,12 @@ updates:
     labels:
       - "dependencies"
       - "ci"
+      - "security"
     groups:
       gh-actions:
         patterns:
           - "*"
-
-  - package-ecosystem: "github-actions"
-    directory: "/"
-    schedule:
-      interval: "daily"
-    open-pull-requests-limit: 2
-    target-branch: "main"
-    commit-message:
-      prefix: "chore"
-      include: scope
-    reviewers:
-      - "chege"
-    labels:
-      - "dependencies"
-      - "security"
-    groups:
       gh-actions-security:
         patterns:
           - "*"
+
