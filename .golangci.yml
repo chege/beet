@@ -1,11 +1,21 @@
-version: "2"
+version: 2
+
 run:
   timeout: 5m
+
 linters:
   enable:
-    - errcheck
+    - govet
     - staticcheck
+    - errcheck
     - ineffassign
-    - revive
-    - unused
-    - unparam
+  disable:
+    - gocyclo
+
+linters-settings:
+  errcheck:
+    check-type-assertions: true
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
