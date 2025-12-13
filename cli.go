@@ -65,6 +65,18 @@ func handleGenerate(configDir string, args []string) error {
 
 func parseIntent(remaining []string) (string, error) {
 	if len(remaining) > 0 {
+		if len(remaining) == 1 {
+			if info, err := os.Stat(remaining[0]); err == nil && !info.IsDir() {
+				b, err := os.ReadFile(remaining[0])
+				if err != nil {
+					return "", fmt.Errorf("read intent file: %w", err)
+				}
+				intent := strings.TrimSpace(string(b))
+				if intent != "" {
+					return intent, nil
+				}
+			}
+		}
 		return strings.TrimSpace(strings.Join(remaining, " ")), nil
 	}
 

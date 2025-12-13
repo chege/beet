@@ -64,3 +64,18 @@ func TestParseIntentFromStdin(t *testing.T) {
 		t.Fatalf("parseIntent = %q, want from stdin", intent)
 	}
 }
+
+func TestParseIntentFromFile(t *testing.T) {
+	tmpFile := filepath.Join(t.TempDir(), "intent.txt")
+	if err := os.WriteFile(tmpFile, []byte("from file\n"), 0o644); err != nil {
+		t.Fatalf("write temp file: %v", err)
+	}
+
+	intent, err := parseIntent([]string{tmpFile})
+	if err != nil {
+		t.Fatalf("parseIntent returned error: %v", err)
+	}
+	if intent != "from file" {
+		t.Fatalf("parseIntent = %q, want from file", intent)
+	}
+}
