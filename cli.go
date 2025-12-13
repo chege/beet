@@ -32,7 +32,9 @@ func main() {
 			fmt.Println(name)
 		}
 	case "doctor":
-		log.Fatalf("doctor not implemented yet")
+		if err := runDoctor(os.Stdout); err != nil {
+			log.Fatalf("doctor: %v", err)
+		}
 	default:
 		if err := handleGenerate(configDir, args); err != nil {
 			log.Fatalf("generate prompt: %v", err)
@@ -51,6 +53,8 @@ func handleGenerate(configDir string, args []string) error {
 	template := fs.String("t", "", "template name")
 	templateLong := fs.String("template", "", "template name")
 	dryRun := fs.Bool("dry-run", false, "render without writing files")
+	forceAgents := fs.Bool("force-agents", false, "overwrite agents.md")
+	execFlag := fs.Bool("exec", false, "execute detected CLI with WORK_PROMPT.md")
 
 	if err := fs.Parse(args); err != nil {
 		return err
@@ -71,7 +75,21 @@ func handleGenerate(configDir string, args []string) error {
 		return nil
 	}
 
-	return writeWorkPrompt(configDir, tmplName, intent, workPromptFilename)
+	if err := writeAgents(configDir, agentsFilename, *forceAgents); err != nil {
+		return err
+	}
+
+	if err := writeWorkPrompt(configDir, tmplName, intent, workPromptFilename); err != nil {
+		return err
+	}
+
+	if *execFlag {
+		if err := runDetectedCLI(workPromptFilename); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func parseIntent(remaining []string) (string, error) {

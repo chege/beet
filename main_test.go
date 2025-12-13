@@ -64,3 +64,66 @@ func TestWriteWorkPrompt(t *testing.T) {
 		}
 	}
 }
+
+func TestWriteAgentsCreatesFile(t *testing.T) {
+	configDir := filepath.Join(t.TempDir(), "cfg")
+	if err := ensureConfigStructure(configDir); err != nil {
+		t.Fatalf("ensureConfigStructure returned error: %v", err)
+	}
+	if err := bootstrapDefaults(configDir); err != nil {
+		t.Fatalf("bootstrapDefaults returned error: %v", err)
+	}
+
+	output := filepath.Join(t.TempDir(), "agents.md")
+	if err := writeAgents(configDir, output, false); err != nil {
+		t.Fatalf("writeAgents returned error: %v", err)
+	}
+
+	content, err := os.ReadFile(output)
+	if err != nil {
+		t.Fatalf("read agents: %v", err)
+	}
+
+	if !strings.Contains(string(content), "Agents") {
+		t.Fatalf("agents file missing header: %s", string(content))
+	}
+	for name := range defaultGuidelines {
+		if !strings.Contains(string(content), strings.TrimSuffix(name, filepath.Ext(name))) {
+			t.Fatalf("agents file missing guideline name %s", name)
+		}
+	}
+}
+
+func TestWriteAgentsRespectsForce(t *testing.T) {
+	configDir := filepath.Join(t.TempDir(), "cfg")
+	if err := ensureConfigStructure(configDir); err != nil {
+		t.Fatalf("ensureConfigStructure returned error: %v", err)
+	}
+	if err := bootstrapDefaults(configDir); err != nil {
+		t.Fatalf("bootstrapDefaults returned error: %v", err)
+	}
+
+	output := filepath.Join(t.TempDir(), "agents.md")
+	original := "keep existing"
+	if err := os.WriteFile(output, []byte(original), 0o644); err != nil {
+		t.Fatalf("write existing agents: %v", err)
+	}
+
+	if err := writeAgents(configDir, output, false); err != nil {
+		t.Fatalf("writeAgents without force returned error: %v", err)
+	}
+
+	content, _ := os.ReadFile(output)
+	if string(content) != original {
+		t.Fatalf("agents file overwritten without force; got %s", string(content))
+	}
+
+	if err := writeAgents(configDir, output, true); err != nil {
+		t.Fatalf("writeAgents with force returned error: %v", err)
+	}
+
+	updated, _ := os.ReadFile(output)
+	if string(updated) == original {
+		t.Fatalf("agents file not overwritten with force")
+	}
+}

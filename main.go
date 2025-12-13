@@ -9,6 +9,7 @@ import (
 
 const internalInstruction = "Internal instruction: clarify, rephrase, infer reasonable gaps, adhere to the template, and output only the final instruction text."
 const workPromptFilename = "WORK_PROMPT.md"
+const agentsFilename = "agents.md"
 
 type guideline struct {
 	name    string
@@ -71,6 +72,38 @@ func writeWorkPrompt(configDir, templateName, intent, outputPath string) error {
 		outputPath = workPromptFilename
 	}
 
+	if err := os.WriteFile(outputPath, []byte(content), 0o644); err != nil {
+		return fmt.Errorf("write %s: %w", outputPath, err)
+	}
+
+	return nil
+}
+
+func buildAgentsContent(guidelines []guideline) string {
+	var b strings.Builder
+	b.WriteString("## Agents\n\n")
+	if text := formatGuidelines(guidelines); text != "" {
+		b.WriteString(text)
+		b.WriteString("\n")
+	}
+	return b.String()
+}
+
+func writeAgents(configDir, outputPath string, force bool) error {
+	if outputPath == "" {
+		outputPath = agentsFilename
+	}
+
+	if _, err := os.Stat(outputPath); err == nil && !force {
+		return nil
+	}
+
+	guidelines, err := loadGuidelines(configDir)
+	if err != nil {
+		return err
+	}
+
+	content := buildAgentsContent(guidelines)
 	if err := os.WriteFile(outputPath, []byte(content), 0o644); err != nil {
 		return fmt.Errorf("write %s: %w", outputPath, err)
 	}

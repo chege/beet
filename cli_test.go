@@ -151,3 +151,42 @@ func TestHandleGenerateDryRun(t *testing.T) {
 		t.Fatalf("WORK_PROMPT.md should not be written in dry-run")
 	}
 }
+
+func TestHandleGenerateExecRunsCLI(t *testing.T) {
+	configDir := filepath.Join(t.TempDir(), "cfg")
+	if err := ensureConfigStructure(configDir); err != nil {
+		t.Fatalf("ensureConfigStructure: %v", err)
+	}
+	if err := bootstrapDefaults(configDir); err != nil {
+		t.Fatalf("bootstrapDefaults: %v", err)
+	}
+
+	binDir := t.TempDir()
+	logFile := filepath.Join(t.TempDir(), "exec.log")
+	script := filepath.Join(binDir, "codex")
+	content := "#!/bin/sh\necho \"$1\" > \"$PF_EXEC_LOG\"\n"
+	if err := os.WriteFile(script, []byte(content), 0o755); err != nil {
+		t.Fatalf("write script: %v", err)
+	}
+	t.Setenv("PATH", binDir)
+	t.Setenv("PF_EXEC_LOG", logFile)
+
+	workdir := t.TempDir()
+	origWD, _ := os.Getwd()
+	defer os.Chdir(origWD)
+	if err := os.Chdir(workdir); err != nil {
+		t.Fatalf("chdir: %v", err)
+	}
+
+	if err := handleGenerate(configDir, []string{"--exec", "do", "it"}); err != nil {
+		t.Fatalf("handleGenerate returned error: %v", err)
+	}
+
+	data, err := os.ReadFile(logFile)
+	if err != nil {
+		t.Fatalf("read exec log: %v", err)
+	}
+	if strings.TrimSpace(string(data)) != workPromptFilename {
+		t.Fatalf("exec log = %q, want %s", strings.TrimSpace(string(data)), workPromptFilename)
+	}
+}
