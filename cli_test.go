@@ -278,3 +278,42 @@ func TestHandleGenerateUsesEditorWhenNoArgs(t *testing.T) {
 		t.Fatalf("work prompt missing editor content: %s", string(content))
 	}
 }
+
+func TestHandleGenerateHelpShowsUsage(t *testing.T) {
+	configDir := filepath.Join(t.TempDir(), "cfg")
+	if err := ensureConfigStructure(configDir); err != nil {
+		t.Fatalf("ensureConfigStructure: %v", err)
+	}
+	if err := bootstrapDefaults(configDir); err != nil {
+		t.Fatalf("bootstrapDefaults: %v", err)
+	}
+
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("pipe: %v", err)
+	}
+	origStdout := os.Stdout
+	os.Stdout = w
+	defer func() { os.Stdout = origStdout }()
+
+	if err := handleGenerate(configDir, []string{"--help"}); err != nil {
+		t.Fatalf("handleGenerate returned error: %v", err)
+	}
+
+	if err := w.Close(); err != nil {
+		t.Fatalf("close pipe writer: %v", err)
+	}
+
+	out, err := io.ReadAll(r)
+	if err != nil {
+		t.Fatalf("read pipe: %v", err)
+	}
+
+	output := string(out)
+	if !strings.Contains(output, "Usage: beet") {
+		t.Fatalf("help output missing usage line: %s", output)
+	}
+	if !strings.Contains(output, "-dry-run") {
+		t.Fatalf("help output missing flags: %s", output)
+	}
+}

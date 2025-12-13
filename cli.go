@@ -2,6 +2,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -71,7 +72,12 @@ func main() {
 
 func handleGenerate(configDir string, args []string) error {
 	fs := flag.NewFlagSet("beet", flag.ContinueOnError)
-	fs.SetOutput(io.Discard)
+	fs.SetOutput(os.Stdout)
+	fs.Usage = func() {
+		fmt.Fprintln(fs.Output(), "Usage: beet [flags] [intent|file]")
+		fmt.Fprintln(fs.Output(), "\nFlags:")
+		fs.PrintDefaults()
+	}
 
 	template := fs.String("t", "", "template name")
 	templateLong := fs.String("template", "", "template name")
@@ -80,6 +86,9 @@ func handleGenerate(configDir string, args []string) error {
 	execFlag := fs.Bool("exec", false, "execute detected CLI with WORK_PROMPT.md")
 
 	if err := fs.Parse(args); err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			return nil
+		}
 		return err
 	}
 
