@@ -1,0 +1,21 @@
+version: '3'
+
+vars:
+  DEFAULT_GO: "1.25"
+
+tasks:
+  lint:
+    desc: Run golangci-lint
+    cmds:
+      - golangci-lint run
+
+  test:
+    desc: Run Go tests
+    cmds:
+      - go test ./...
+
+  ci:
+    desc: Run lint and tests (matches CI)
+    cmds:
+      - task lint
+      - task test
