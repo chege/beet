@@ -12,6 +12,9 @@ vendor/
 coverage.*
 *.coverprofile
 
+# Local builds
+beet
+
 # Editor and OS files
 .DS_Store
 .idea/
