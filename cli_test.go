@@ -79,3 +79,28 @@ func TestParseIntentFromFile(t *testing.T) {
 		t.Fatalf("parseIntent = %q, want from file", intent)
 	}
 }
+
+func TestParseIntentFromEditor(t *testing.T) {
+	script := filepath.Join(t.TempDir(), "editor.sh")
+	content := "#!/bin/sh\necho \"from editor\" > \"$1\"\n"
+	if err := os.WriteFile(script, []byte(content), 0o755); err != nil {
+		t.Fatalf("write script: %v", err)
+	}
+	t.Setenv("EDITOR", script)
+
+	devNull, err := os.Open(os.DevNull)
+	if err != nil {
+		t.Fatalf("open devnull: %v", err)
+	}
+	origStdin := os.Stdin
+	os.Stdin = devNull
+	defer func() { os.Stdin = origStdin }()
+
+	intent, err := parseIntent(nil)
+	if err != nil {
+		t.Fatalf("parseIntent returned error: %v", err)
+	}
+	if intent != "from editor" {
+		t.Fatalf("parseIntent = %q, want from editor", intent)
+	}
+}

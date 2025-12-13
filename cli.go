@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"os/exec"
 	"strings"
 )
 
@@ -92,7 +93,7 @@ func parseIntent(remaining []string) (string, error) {
 		}
 	}
 
-	return "", fmt.Errorf("intent is required via args or stdin")
+	return intentFromEditor()
 }
 
 func firstNonEmpty(values ...string) string {
@@ -102,4 +103,39 @@ func firstNonEmpty(values ...string) string {
 		}
 	}
 	return ""
+}
+
+func intentFromEditor() (string, error) {
+	editor := strings.TrimSpace(os.Getenv("EDITOR"))
+	if editor == "" {
+		return "", fmt.Errorf("intent is required via args or stdin; set EDITOR to use an editor")
+	}
+
+	tmp, err := os.CreateTemp("", "pf-intent-*.md")
+	if err != nil {
+		return "", fmt.Errorf("create temp file: %w", err)
+	}
+	defer os.Remove(tmp.Name())
+	tmp.Close()
+
+	cmd := exec.Command(editor, tmp.Name())
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Run(); err != nil {
+		return "", fmt.Errorf("launch editor: %w", err)
+	}
+
+	b, err := os.ReadFile(tmp.Name())
+	if err != nil {
+		return "", fmt.Errorf("read editor output: %w", err)
+	}
+
+	intent := strings.TrimSpace(string(b))
+	if intent == "" {
+		return "", fmt.Errorf("intent is empty; provide input")
+	}
+
+	return intent, nil
 }
