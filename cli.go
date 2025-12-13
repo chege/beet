@@ -18,8 +18,10 @@ func main() {
 
 	args := os.Args[1:]
 	if len(args) == 0 {
-		printUsage()
-		os.Exit(1)
+		if err := handleGenerate(configDir, args); err != nil {
+			log.Fatalf("generate prompt: %v", err)
+		}
+		return
 	}
 
 	switch args[0] {

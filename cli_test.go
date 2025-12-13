@@ -190,3 +190,43 @@ func TestHandleGenerateExecRunsCLI(t *testing.T) {
 		t.Fatalf("exec log = %q, want %s", strings.TrimSpace(string(data)), workPromptFilename)
 	}
 }
+
+func TestHandleGenerateUsesEditorWhenNoArgs(t *testing.T) {
+	configDir := filepath.Join(t.TempDir(), "cfg")
+	if err := ensureConfigStructure(configDir); err != nil {
+		t.Fatalf("ensureConfigStructure: %v", err)
+	}
+	if err := bootstrapDefaults(configDir); err != nil {
+		t.Fatalf("bootstrapDefaults: %v", err)
+	}
+
+	workdir := t.TempDir()
+	origWD, _ := os.Getwd()
+	defer os.Chdir(origWD)
+	if err := os.Chdir(workdir); err != nil {
+		t.Fatalf("chdir: %v", err)
+	}
+
+	script := filepath.Join(t.TempDir(), "editor.sh")
+	if err := os.WriteFile(script, []byte("#!/bin/sh\necho \"from editor\" > \"$1\"\n"), 0o755); err != nil {
+		t.Fatalf("write script: %v", err)
+	}
+	t.Setenv("EDITOR", script)
+
+	origStdin := os.Stdin
+	devNull, _ := os.Open(os.DevNull)
+	os.Stdin = devNull
+	defer func() { os.Stdin = origStdin }()
+
+	if err := handleGenerate(configDir, nil); err != nil {
+		t.Fatalf("handleGenerate returned error: %v", err)
+	}
+
+	content, err := os.ReadFile(workPromptFilename)
+	if err != nil {
+		t.Fatalf("read work prompt: %v", err)
+	}
+	if !strings.Contains(string(content), "from editor") {
+		t.Fatalf("work prompt missing editor content: %s", string(content))
+	}
+}
