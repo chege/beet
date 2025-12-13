@@ -9,8 +9,8 @@ import (
 )
 
 const (
-	envConfigDir        = "PF_CONFIG_DIR"
-	defaultConfigFolder = ".pf"
+	envConfigDir        = "BEET_CONFIG_DIR"
+	defaultConfigFolder = ".beet"
 	templatesDirName    = "templates"
 	guidelinesDirName   = "guidelines"
 	defaultTemplateName = "default.md"

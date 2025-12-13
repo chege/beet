@@ -1,4 +1,4 @@
-# Prompt Framework CLI — PRD & SRS
+# Beet CLI — PRD & SRS
 _Last updated: 2025-12-12_
 
 ---
@@ -7,7 +7,7 @@ _Last updated: 2025-12-12_
 
 ### 1. Purpose
 
-The Prompt Framework CLI (`pf`) is a local developer tool that transforms **free‑form human intent**
+The Beet CLI (`beet`) is a local developer tool that transforms **free‑form human intent**
 into **clean, structured, repository‑ready instruction files** for Codex CLI, Copilot CLI, or similar LLM tools.
 
 The output is committed files, not chat history.
@@ -117,7 +117,7 @@ WORK_PROMPT.md   # volatile: what Codex should do now
 
 ### 1. Scope
 
-This SRS defines the functional and non‑functional requirements for the Prompt Framework CLI (`pf`).
+This SRS defines the functional and non‑functional requirements for the Beet CLI (`beet`).
 
 ---
 
@@ -170,12 +170,12 @@ The tool must prepend a fixed internal instruction that directs the LLM to:
 
 Default config directory:
 ```
-~/.pf/
+~/.beet/
 ```
 
 Structure:
 ```
-~/.pf/
+~/.beet/
   templates/
   guidelines/
 ```
@@ -185,7 +185,7 @@ Structure:
 
 Override:
 ```
-PF_CONFIG_DIR
+BEET_CONFIG_DIR
 ```
 
 ---
@@ -208,7 +208,7 @@ PF_CONFIG_DIR
 - Detect available CLIs in priority order:
   1. Codex CLI
   2. Copilot CLI
-- Provide transparency via `pf doctor`
+- Provide transparency via `beet doctor`
 - Fail clearly if `--exec` is requested and none are found
 
 ---
@@ -216,10 +216,10 @@ PF_CONFIG_DIR
 #### FR‑8 Commands
 
 ```
-pf [input]
-pf -t <template>
-pf templates
-pf doctor
+beet [input]
+beet -t <template>
+beet templates
+beet doctor
 ```
 
 ---
@@ -263,7 +263,7 @@ The system is considered complete when:
 
 ## Summary
 
-`pf` is a **prompt‑to‑instruction compiler**.
+`beet` is a **prompt‑to‑instruction compiler**.
 
 Humans write intent.
 Templates encode discipline.

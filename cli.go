@@ -1,4 +1,4 @@
-// Package main implements the pf CLI.
+// Package main implements the Beet CLI.
 package main
 
 import (
@@ -60,7 +60,7 @@ func main() {
 }
 
 func handleGenerate(configDir string, args []string) error {
-	fs := flag.NewFlagSet("pf", flag.ContinueOnError)
+	fs := flag.NewFlagSet("beet", flag.ContinueOnError)
 	fs.SetOutput(io.Discard)
 
 	template := fs.String("t", "", "template name")
@@ -152,7 +152,7 @@ func intentFromEditor() (string, error) {
 		return intentFromDefaultApp()
 	}
 
-	tmp, err := os.CreateTemp("", "pf-intent-*.md")
+	tmp, err := os.CreateTemp("", "beet-intent-*.md")
 	if err != nil {
 		return "", fmt.Errorf("create temp file: %w", err)
 	}
@@ -186,7 +186,7 @@ func intentFromEditor() (string, error) {
 }
 
 func intentFromDefaultApp() (string, error) {
-	tmp, err := os.CreateTemp("", "pf-intent-*.md")
+	tmp, err := os.CreateTemp("", "beet-intent-*.md")
 	if err != nil {
 		return "", fmt.Errorf("create temp file: %w", err)
 	}

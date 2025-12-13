@@ -16,7 +16,7 @@ func TestE2EGenerateCreatesOutputs(t *testing.T) {
 
 	workdir := t.TempDir()
 	configDir := filepath.Join(t.TempDir(), "cfg")
-	bin := filepath.Join(t.TempDir(), "pf-e2e")
+	bin := filepath.Join(t.TempDir(), "beet-e2e")
 
 	build := exec.Command("go", "build", "-o", bin, ".")
 	build.Dir = root
@@ -27,12 +27,12 @@ func TestE2EGenerateCreatesOutputs(t *testing.T) {
 	cmd := exec.Command(bin, "ship", "it")
 	cmd.Dir = workdir
 	cmd.Env = append(os.Environ(),
-		"PF_CONFIG_DIR="+configDir,
+		"BEET_CONFIG_DIR="+configDir,
 		"HOME="+workdir,
 	)
 
 	if out, err := cmd.CombinedOutput(); err != nil {
-		t.Fatalf("pf execution failed: %v\n%s", err, string(out))
+		t.Fatalf("beet execution failed: %v\n%s", err, string(out))
 	}
 
 	wp := filepath.Join(workdir, workPromptFilename)
