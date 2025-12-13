@@ -36,7 +36,9 @@ func detectAllCLIs() []detectedCLI {
 func runDoctor(w io.Writer) error {
 	found := detectAllCLIs()
 	for _, name := range cliPriority {
-		fmt.Fprintf(w, "%s: ", name)
+		if _, err := fmt.Fprintf(w, "%s: ", name); err != nil {
+			return err
+		}
 		path := ""
 		for _, cli := range found {
 			if cli.name == name {
@@ -45,14 +47,20 @@ func runDoctor(w io.Writer) error {
 			}
 		}
 		if path == "" {
-			fmt.Fprintln(w, "not found")
+			if _, err := fmt.Fprintln(w, "not found"); err != nil {
+				return err
+			}
 		} else {
-			fmt.Fprintf(w, "found at %s\n", path)
+			if _, err := fmt.Fprintf(w, "found at %s\n", path); err != nil {
+				return err
+			}
 		}
 	}
 
 	if len(found) == 0 {
-		fmt.Fprintln(w, "No supported CLI detected. Install Codex CLI or Copilot CLI.")
+		if _, err := fmt.Fprintln(w, "No supported CLI detected. Install Codex CLI or Copilot CLI."); err != nil {
+			return err
+		}
 	}
 
 	return nil

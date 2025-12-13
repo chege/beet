@@ -1,3 +1,4 @@
+// Package main implements the pf CLI.
 package main
 
 import (
@@ -14,7 +15,9 @@ import "github.com/pkg/browser"
 
 var openFileWithDefault = browser.OpenFile
 var waitForEdit = func(path string) error {
-	fmt.Fprintf(os.Stdout, "Edit intent in %s, then press Enter to continue: ", path)
+	if _, err := fmt.Fprintf(os.Stdout, "Edit intent in %s, then press Enter to continue: ", path); err != nil {
+		return err
+	}
 	_, err := fmt.Fscanln(os.Stdin)
 	if err == io.EOF {
 		return nil
@@ -54,10 +57,6 @@ func main() {
 			log.Fatalf("generate prompt: %v", err)
 		}
 	}
-}
-
-func printUsage() {
-	fmt.Fprintln(os.Stderr, "Usage: pf [input] | pf -t <template> | pf templates | pf doctor")
 }
 
 func handleGenerate(configDir string, args []string) error {
@@ -157,8 +156,12 @@ func intentFromEditor() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("create temp file: %w", err)
 	}
-	defer os.Remove(tmp.Name())
-	tmp.Close()
+	defer func() {
+		_ = os.Remove(tmp.Name())
+	}()
+	if err := tmp.Close(); err != nil {
+		return "", fmt.Errorf("close temp file: %w", err)
+	}
 
 	cmd := exec.Command(editor, tmp.Name())
 	cmd.Stdin = os.Stdin
@@ -187,8 +190,12 @@ func intentFromDefaultApp() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("create temp file: %w", err)
 	}
-	defer os.Remove(tmp.Name())
-	tmp.Close()
+	defer func() {
+		_ = os.Remove(tmp.Name())
+	}()
+	if err := tmp.Close(); err != nil {
+		return "", fmt.Errorf("close temp file: %w", err)
+	}
 
 	if err := openFileWithDefault(tmp.Name()); err != nil {
 		return "", fmt.Errorf("open default app: %w", err)

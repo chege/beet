@@ -22,7 +22,9 @@ func TestHandleGenerateCreatesWorkPrompt(t *testing.T) {
 	if err != nil {
 		t.Fatalf("getwd: %v", err)
 	}
-	defer os.Chdir(origWD)
+	defer func() {
+		_ = os.Chdir(origWD)
+	}()
 	if err := os.Chdir(workdir); err != nil {
 		t.Fatalf("chdir: %v", err)
 	}
@@ -55,7 +57,9 @@ func TestParseIntentFromStdin(t *testing.T) {
 	if _, err := w.WriteString("from stdin"); err != nil {
 		t.Fatalf("write stdin: %v", err)
 	}
-	w.Close()
+	if err := w.Close(); err != nil {
+		t.Fatalf("close pipe writer: %v", err)
+	}
 
 	intent, err := parseIntent(nil)
 	if err != nil {
@@ -143,7 +147,9 @@ func TestHandleGenerateDryRun(t *testing.T) {
 	if err != nil {
 		t.Fatalf("getwd: %v", err)
 	}
-	defer os.Chdir(origWD)
+	defer func() {
+		_ = os.Chdir(origWD)
+	}()
 	if err := os.Chdir(workdir); err != nil {
 		t.Fatalf("chdir: %v", err)
 	}
@@ -158,7 +164,9 @@ func TestHandleGenerateDryRun(t *testing.T) {
 	if err := handleGenerate(configDir, []string{"--dry-run", "do", "it"}); err != nil {
 		t.Fatalf("handleGenerate returned error: %v", err)
 	}
-	w.Close()
+	if err := w.Close(); err != nil {
+		t.Fatalf("close pipe writer: %v", err)
+	}
 	os.Stdout = origStdout
 
 	out, err := io.ReadAll(r)
@@ -195,8 +203,13 @@ func TestHandleGenerateExecRunsCLI(t *testing.T) {
 	t.Setenv("PF_EXEC_LOG", logFile)
 
 	workdir := t.TempDir()
-	origWD, _ := os.Getwd()
-	defer os.Chdir(origWD)
+	origWD, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("getwd: %v", err)
+	}
+	defer func() {
+		_ = os.Chdir(origWD)
+	}()
 	if err := os.Chdir(workdir); err != nil {
 		t.Fatalf("chdir: %v", err)
 	}
@@ -224,8 +237,13 @@ func TestHandleGenerateUsesEditorWhenNoArgs(t *testing.T) {
 	}
 
 	workdir := t.TempDir()
-	origWD, _ := os.Getwd()
-	defer os.Chdir(origWD)
+	origWD, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("getwd: %v", err)
+	}
+	defer func() {
+		_ = os.Chdir(origWD)
+	}()
 	if err := os.Chdir(workdir); err != nil {
 		t.Fatalf("chdir: %v", err)
 	}
@@ -237,7 +255,10 @@ func TestHandleGenerateUsesEditorWhenNoArgs(t *testing.T) {
 	t.Setenv("EDITOR", script)
 
 	origStdin := os.Stdin
-	devNull, _ := os.Open(os.DevNull)
+	devNull, err := os.Open(os.DevNull)
+	if err != nil {
+		t.Fatalf("open devnull: %v", err)
+	}
 	os.Stdin = devNull
 	defer func() { os.Stdin = origStdin }()
 
