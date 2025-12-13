@@ -131,6 +131,79 @@ func TestListTemplatesSorted(t *testing.T) {
 	}
 }
 
+func TestLoadTemplateDefault(t *testing.T) {
+	dir := filepath.Join(t.TempDir(), "cfg")
+	if err := ensureConfigStructure(dir); err != nil {
+		t.Fatalf("ensureConfigStructure returned error: %v", err)
+	}
+	if err := bootstrapDefaults(dir); err != nil {
+		t.Fatalf("bootstrapDefaults returned error: %v", err)
+	}
+
+	got, err := loadTemplate(dir, "")
+	if err != nil {
+		t.Fatalf("loadTemplate returned error: %v", err)
+	}
+
+	if got == "" {
+		t.Fatalf("loadTemplate returned empty template")
+	}
+}
+
+func TestLoadTemplateAddsExtension(t *testing.T) {
+	dir := filepath.Join(t.TempDir(), "cfg")
+	if err := ensureConfigStructure(dir); err != nil {
+		t.Fatalf("ensureConfigStructure returned error: %v", err)
+	}
+
+	want := "hello"
+	path := filepath.Join(dir, templatesDirName, "custom.md")
+	if err := os.WriteFile(path, []byte(want), 0o644); err != nil {
+		t.Fatalf("write template: %v", err)
+	}
+
+	got, err := loadTemplate(dir, "custom")
+	if err != nil {
+		t.Fatalf("loadTemplate returned error: %v", err)
+	}
+	if got != want {
+		t.Fatalf("loadTemplate = %q, want %q", got, want)
+	}
+}
+
+func TestLoadGuidelinesSorted(t *testing.T) {
+	dir := filepath.Join(t.TempDir(), "cfg")
+	if err := ensureConfigStructure(dir); err != nil {
+		t.Fatalf("ensureConfigStructure returned error: %v", err)
+	}
+
+	guidelineFiles := map[string]string{
+		"b.md": "second",
+		"a.md": "first",
+	}
+	for name, content := range guidelineFiles {
+		if err := os.WriteFile(filepath.Join(dir, guidelinesDirName, name), []byte(content), 0o644); err != nil {
+			t.Fatalf("write guideline %s: %v", name, err)
+		}
+	}
+
+	got, err := loadGuidelines(dir)
+	if err != nil {
+		t.Fatalf("loadGuidelines returned error: %v", err)
+	}
+
+	if len(got) != 2 {
+		t.Fatalf("len(guidelines) = %d, want 2", len(got))
+	}
+
+	if got[0].name != "a" || got[0].content != "first" {
+		t.Fatalf("first guideline = %+v, want name a content first", got[0])
+	}
+	if got[1].name != "b" || got[1].content != "second" {
+		t.Fatalf("second guideline = %+v, want name b content second", got[1])
+	}
+}
+
 func sortedCopy(in []string) []string {
 	out := append([]string(nil), in...)
 	for i := 0; i < len(out); i++ {

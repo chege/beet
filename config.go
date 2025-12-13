@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 )
 
 const (
@@ -12,6 +13,7 @@ const (
 	defaultConfigFolder = ".pf"
 	templatesDirName    = "templates"
 	guidelinesDirName   = "guidelines"
+	defaultTemplateName = "default.md"
 )
 
 var defaultTemplates = map[string]string{
@@ -97,6 +99,50 @@ func listTemplates(configDir string) ([]string, error) {
 
 	sort.Strings(names)
 	return names, nil
+}
+
+func loadTemplate(configDir, name string) (string, error) {
+	if name == "" {
+		name = defaultTemplateName
+	}
+	if !strings.HasSuffix(name, ".md") {
+		name += ".md"
+	}
+
+	path := filepath.Join(configDir, templatesDirName, name)
+	b, err := os.ReadFile(path)
+	if err != nil {
+		return "", fmt.Errorf("load template %s: %w", name, err)
+	}
+	return string(b), nil
+}
+
+func loadGuidelines(configDir string) ([]guideline, error) {
+	dir := filepath.Join(configDir, guidelinesDirName)
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return nil, fmt.Errorf("read guidelines: %w", err)
+	}
+
+	sort.Slice(entries, func(i, j int) bool {
+		return entries[i].Name() < entries[j].Name()
+	})
+
+	var out []guideline
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+
+		name := strings.TrimSuffix(entry.Name(), filepath.Ext(entry.Name()))
+		content, err := os.ReadFile(filepath.Join(dir, entry.Name()))
+		if err != nil {
+			return nil, fmt.Errorf("read guideline %s: %w", entry.Name(), err)
+		}
+		out = append(out, guideline{name: name, content: string(content)})
+	}
+
+	return out, nil
 }
 
 func prepareConfig() (string, error) {
