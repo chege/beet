@@ -17,6 +17,11 @@ updates:
     allow:
       - dependency-type: "direct"
     groups:
+      gomod-major:
+        patterns:
+          - "*"
+        update-types:
+          - "major"
       gomod-minor:
         patterns:
           - "*"
@@ -40,5 +45,24 @@ updates:
       - "ci"
     groups:
       gh-actions:
+        patterns:
+          - "*"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 2
+    target-branch: "main"
+    commit-message:
+      prefix: "chore"
+      include: scope
+    reviewers:
+      - "chege"
+    labels:
+      - "dependencies"
+      - "security"
+    groups:
+      gh-actions-security:
         patterns:
           - "*"
