@@ -1,0 +1,22 @@
+# Build artifacts
+bin/
+vendor/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+*.log
+coverage.*
+*.coverprofile
+
+# Editor and OS files
+.DS_Store
+.idea/
+.vscode/
+
+# Environment files
+.env
+.env.*
