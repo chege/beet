@@ -19,8 +19,11 @@ jobs:
         with:
           go-version: '1.25.x'
 
+      - name: Set GOMODCACHE
+        run: echo "GOMODCACHE=$RUNNER_TEMP/gocache" >> $GITHUB_ENV
+
       - name: Ensure cache directories clean
-        run: rm -rf ~/.cache/go-build ~/go/pkg/mod || true
+        run: rm -rf ~/.cache/go-build $GOMODCACHE || true
 
       - name: Cache Go modules
         uses: actions/cache@v4
@@ -28,7 +31,7 @@ jobs:
         with:
           path: |
             ~/.cache/go-build
-            ~/go/pkg/mod
+            ${{ env.GOMODCACHE }}
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-
