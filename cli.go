@@ -10,6 +10,18 @@ import (
 	"strings"
 )
 
+import "github.com/pkg/browser"
+
+var openFileWithDefault = browser.OpenFile
+var waitForEdit = func(path string) error {
+	fmt.Fprintf(os.Stdout, "Edit intent in %s, then press Enter to continue: ", path)
+	_, err := fmt.Fscanln(os.Stdin)
+	if err == io.EOF {
+		return nil
+	}
+	return err
+}
+
 func main() {
 	configDir, err := prepareConfig()
 	if err != nil {
@@ -138,7 +150,7 @@ func firstNonEmpty(values ...string) string {
 func intentFromEditor() (string, error) {
 	editor := strings.TrimSpace(os.Getenv("EDITOR"))
 	if editor == "" {
-		return "", fmt.Errorf("intent is required via args or stdin; set EDITOR to use an editor")
+		return intentFromDefaultApp()
 	}
 
 	tmp, err := os.CreateTemp("", "pf-intent-*.md")
@@ -160,6 +172,35 @@ func intentFromEditor() (string, error) {
 	b, err := os.ReadFile(tmp.Name())
 	if err != nil {
 		return "", fmt.Errorf("read editor output: %w", err)
+	}
+
+	intent := strings.TrimSpace(string(b))
+	if intent == "" {
+		return "", fmt.Errorf("intent is empty; provide input")
+	}
+
+	return intent, nil
+}
+
+func intentFromDefaultApp() (string, error) {
+	tmp, err := os.CreateTemp("", "pf-intent-*.md")
+	if err != nil {
+		return "", fmt.Errorf("create temp file: %w", err)
+	}
+	defer os.Remove(tmp.Name())
+	tmp.Close()
+
+	if err := openFileWithDefault(tmp.Name()); err != nil {
+		return "", fmt.Errorf("open default app: %w", err)
+	}
+
+	if err := waitForEdit(tmp.Name()); err != nil {
+		return "", fmt.Errorf("await default edit: %w", err)
+	}
+
+	b, err := os.ReadFile(tmp.Name())
+	if err != nil {
+		return "", fmt.Errorf("read intent: %w", err)
 	}
 
 	intent := strings.TrimSpace(string(b))
