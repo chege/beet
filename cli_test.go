@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -102,5 +103,51 @@ func TestParseIntentFromEditor(t *testing.T) {
 	}
 	if intent != "from editor" {
 		t.Fatalf("parseIntent = %q, want from editor", intent)
+	}
+}
+
+func TestHandleGenerateDryRun(t *testing.T) {
+	configDir := filepath.Join(t.TempDir(), "cfg")
+	if err := ensureConfigStructure(configDir); err != nil {
+		t.Fatalf("ensureConfigStructure: %v", err)
+	}
+	if err := bootstrapDefaults(configDir); err != nil {
+		t.Fatalf("bootstrapDefaults: %v", err)
+	}
+
+	workdir := t.TempDir()
+	origWD, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("getwd: %v", err)
+	}
+	defer os.Chdir(origWD)
+	if err := os.Chdir(workdir); err != nil {
+		t.Fatalf("chdir: %v", err)
+	}
+
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("pipe: %v", err)
+	}
+	origStdout := os.Stdout
+	os.Stdout = w
+
+	if err := handleGenerate(configDir, []string{"--dry-run", "do", "it"}); err != nil {
+		t.Fatalf("handleGenerate returned error: %v", err)
+	}
+	w.Close()
+	os.Stdout = origStdout
+
+	out, err := io.ReadAll(r)
+	if err != nil {
+		t.Fatalf("read pipe: %v", err)
+	}
+
+	if strings.Contains(string(out), "Template: default") == false {
+		t.Fatalf("dry-run output missing template label: %s", string(out))
+	}
+
+	if _, err := os.Stat(filepath.Join(workdir, workPromptFilename)); err == nil {
+		t.Fatalf("WORK_PROMPT.md should not be written in dry-run")
 	}
 }

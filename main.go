@@ -44,21 +44,28 @@ func formatGuidelines(guidelines []guideline) string {
 	return strings.TrimSpace(b.String())
 }
 
-func writeWorkPrompt(configDir, templateName, intent, outputPath string) error {
+func buildWorkPromptContent(configDir, templateName, intent string) (string, error) {
 	normalized := normalizeTemplateName(templateName)
 
 	template, err := loadTemplate(configDir, templateName)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	guidelines, err := loadGuidelines(configDir)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	label := strings.TrimSuffix(normalized, filepath.Ext(normalized))
-	content := buildWorkPrompt(label, template, guidelines, intent)
+	return buildWorkPrompt(label, template, guidelines, intent), nil
+}
+
+func writeWorkPrompt(configDir, templateName, intent, outputPath string) error {
+	content, err := buildWorkPromptContent(configDir, templateName, intent)
+	if err != nil {
+		return err
+	}
 
 	if outputPath == "" {
 		outputPath = workPromptFilename

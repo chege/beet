@@ -50,6 +50,7 @@ func handleGenerate(configDir string, args []string) error {
 
 	template := fs.String("t", "", "template name")
 	templateLong := fs.String("template", "", "template name")
+	dryRun := fs.Bool("dry-run", false, "render without writing files")
 
 	if err := fs.Parse(args); err != nil {
 		return err
@@ -61,6 +62,15 @@ func handleGenerate(configDir string, args []string) error {
 	}
 
 	tmplName := firstNonEmpty(*template, *templateLong)
+	if *dryRun {
+		content, err := buildWorkPromptContent(configDir, tmplName, intent)
+		if err != nil {
+			return err
+		}
+		fmt.Println(content)
+		return nil
+	}
+
 	return writeWorkPrompt(configDir, tmplName, intent, workPromptFilename)
 }
 
