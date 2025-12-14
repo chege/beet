@@ -105,6 +105,28 @@ func TestBootstrapDefaultsIdempotent(t *testing.T) {
 	}
 }
 
+func TestBootstrapDefaultsCreatesDefaultPack(t *testing.T) {
+	dir := filepath.Join(t.TempDir(), "cfg")
+	if err := ensureConfigStructure(dir); err != nil {
+		t.Fatalf("ensureConfigStructure returned error: %v", err)
+	}
+
+	if err := bootstrapDefaults(dir); err != nil {
+		t.Fatalf("bootstrapDefaults returned error: %v", err)
+	}
+
+	path := filepath.Join(dir, packsDirName, "default.yaml")
+	got, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read default pack: %v", err)
+	}
+
+	want := defaultPacks["default.yaml"]
+	if string(got) != want {
+		t.Fatalf("default pack content mismatch:\n got: %s\nwant: %s", string(got), want)
+	}
+}
+
 func TestListTemplatesSorted(t *testing.T) {
 	dir := filepath.Join(t.TempDir(), "cfg")
 	if err := ensureConfigStructure(dir); err != nil {
