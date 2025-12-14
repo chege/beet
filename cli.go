@@ -9,6 +9,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 )
 
@@ -92,6 +93,8 @@ func handleGenerate(configDir string, args []string) error {
 
 	template := fs.String("t", "", "template name")
 	templateLong := fs.String("template", "", "template name")
+	pack := fs.String("p", "", "pack name")
+	packLong := fs.String("pack", "", "pack name")
 	dryRun := fs.Bool("dry-run", false, "render without writing files")
 	forceAgents := fs.Bool("force-agents", false, "overwrite agents.md")
 	execFlag := fs.Bool("exec", true, "execute detected CLI with WORK_PROMPT.md")
@@ -109,25 +112,59 @@ func handleGenerate(configDir string, args []string) error {
 	}
 
 	tmplName := firstNonEmpty(*template, *templateLong)
-	if *dryRun {
-		content, err := buildWorkPromptContent(configDir, tmplName, intent)
+	packName := firstNonEmpty(*pack, *packLong)
+
+	if packName == "" {
+		packName = defaultPackName
+	}
+
+	p, err := loadPack(configDir, packName)
+	if err != nil {
+		return err
+	}
+
+	guidelines, err := loadGuidelines(configDir)
+	if err != nil {
+		return err
+	}
+
+	var cli detectedCLI
+	if *execFlag {
+		cli, err = requireCLI()
 		if err != nil {
 			return err
 		}
-		fmt.Println(content)
-		return nil
 	}
 
-	if err := writeAgents(configDir, agentsFilename, *forceAgents); err != nil {
-		return err
-	}
+	for _, out := range p.Outputs {
+		templateName := out.Template
+		if tmplName != "" && strings.EqualFold(out.File, workPromptFilename) {
+			templateName = tmplName
+		}
 
-	if err := writeWorkPrompt(configDir, tmplName, intent, workPromptFilename); err != nil {
-		return err
-	}
+		templateContent, err := loadTemplate(configDir, templateName)
+		if err != nil {
+			return err
+		}
 
-	if *execFlag {
-		if err := runDetectedCLI(workPromptFilename); err != nil {
+		normalized := normalizeTemplateName(templateName)
+		label := strings.TrimSuffix(normalized, filepath.Ext(normalized))
+		prompt := buildWorkPrompt(label, templateContent, guidelines, intent)
+
+		if *dryRun {
+			fmt.Printf("=== %s ===\n%s\n", out.File, prompt)
+			continue
+		}
+
+		content := prompt
+		if *execFlag {
+			content, err = runCLI(cli, prompt)
+			if err != nil {
+				return err
+			}
+		}
+
+		if err := writeRenderedOutput(out.File, content, *forceAgents); err != nil {
 			return err
 		}
 	}

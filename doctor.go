@@ -83,3 +83,11 @@ func runDetectedCLI(promptPath string) error {
 
 	return nil
 }
+
+func requireCLI() (detectedCLI, error) {
+	cli, ok := detectPreferredCLI()
+	if !ok {
+		return detectedCLI{}, fmt.Errorf("no supported CLI found; install Codex CLI or Copilot CLI")
+	}
+	return cli, nil
+}

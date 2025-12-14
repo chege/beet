@@ -8,6 +8,8 @@ import (
 	"strings"
 )
 
+import "gopkg.in/yaml.v3"
+
 const (
 	envConfigDir        = "BEET_CONFIG_DIR"
 	defaultConfigFolder = ".beet"
@@ -15,6 +17,7 @@ const (
 	guidelinesDirName   = "guidelines"
 	packsDirName        = "packs"
 	defaultTemplateName = "default.md"
+	defaultPackName     = "default.yaml"
 )
 
 var defaultTemplates = map[string]string{
@@ -186,6 +189,55 @@ func normalizeTemplateName(name string) string {
 		name += ".md"
 	}
 	return name
+}
+
+type pack struct {
+	Outputs []packOutput `yaml:"outputs"`
+}
+
+type packOutput struct {
+	File     string `yaml:"file"`
+	Template string `yaml:"template"`
+}
+
+func normalizePackName(name string) string {
+	if name == "" {
+		name = defaultPackName
+	}
+	if !strings.HasSuffix(name, ".yaml") {
+		name += ".yaml"
+	}
+	return name
+}
+
+func loadPack(configDir, name string) (pack, error) {
+	name = normalizePackName(name)
+	path := filepath.Join(configDir, packsDirName, name)
+
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return pack{}, fmt.Errorf("load pack %s: %w", name, err)
+	}
+
+	var p pack
+	if err := yaml.Unmarshal(data, &p); err != nil {
+		return pack{}, fmt.Errorf("parse pack %s: %w", name, err)
+	}
+
+	if len(p.Outputs) == 0 {
+		return pack{}, fmt.Errorf("pack %s has no outputs", name)
+	}
+
+	for i, out := range p.Outputs {
+		if strings.TrimSpace(out.File) == "" {
+			return pack{}, fmt.Errorf("pack %s output %d missing file", name, i)
+		}
+		if strings.TrimSpace(out.Template) == "" {
+			return pack{}, fmt.Errorf("pack %s output %d missing template", name, i)
+		}
+	}
+
+	return p, nil
 }
 
 func prepareConfig() (string, error) {

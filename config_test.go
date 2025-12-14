@@ -252,6 +252,45 @@ func TestLoadGuidelinesSorted(t *testing.T) {
 	}
 }
 
+func TestLoadPackDefault(t *testing.T) {
+	dir := filepath.Join(t.TempDir(), "cfg")
+	if err := ensureConfigStructure(dir); err != nil {
+		t.Fatalf("ensureConfigStructure returned error: %v", err)
+	}
+	if err := bootstrapDefaults(dir); err != nil {
+		t.Fatalf("bootstrapDefaults returned error: %v", err)
+	}
+
+	p, err := loadPack(dir, "")
+	if err != nil {
+		t.Fatalf("loadPack returned error: %v", err)
+	}
+
+	if len(p.Outputs) != 2 {
+		t.Fatalf("len(outputs) = %d, want 2", len(p.Outputs))
+	}
+	if p.Outputs[0].File == "" || p.Outputs[0].Template == "" {
+		t.Fatalf("pack outputs should include file and template")
+	}
+}
+
+func TestLoadPackValidates(t *testing.T) {
+	dir := filepath.Join(t.TempDir(), "cfg")
+	if err := ensureConfigStructure(dir); err != nil {
+		t.Fatalf("ensureConfigStructure returned error: %v", err)
+	}
+
+	bad := "outputs:\n  - file: \"\"\n    template: \"\"\n"
+	path := filepath.Join(dir, packsDirName, "bad.yaml")
+	if err := os.WriteFile(path, []byte(bad), 0o644); err != nil {
+		t.Fatalf("write pack: %v", err)
+	}
+
+	if _, err := loadPack(dir, "bad"); err == nil {
+		t.Fatalf("expected validation error")
+	}
+}
+
 func sortedCopy(in []string) []string {
 	out := append([]string(nil), in...)
 	for i := 0; i < len(out); i++ {

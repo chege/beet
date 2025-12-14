@@ -199,7 +199,7 @@ func TestHandleGenerateExecRunsCLI(t *testing.T) {
 	binDir := t.TempDir()
 	logFile := filepath.Join(t.TempDir(), "exec.log")
 	script := filepath.Join(binDir, "codex")
-	content := "#!/bin/sh\necho \"$1\" > \"$PF_EXEC_LOG\"\n"
+	content := "#!/bin/sh\n/bin/cat >> \"$PF_EXEC_LOG\"\n"
 	if err := os.WriteFile(script, []byte(content), 0o755); err != nil {
 		t.Fatalf("write script: %v", err)
 	}
@@ -226,8 +226,51 @@ func TestHandleGenerateExecRunsCLI(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read exec log: %v", err)
 	}
-	if strings.TrimSpace(string(data)) != workPromptFilename {
-		t.Fatalf("exec log = %q, want %s", strings.TrimSpace(string(data)), workPromptFilename)
+	contentStr := strings.TrimSpace(string(data))
+	if !strings.Contains(contentStr, "Internal instruction") || !strings.Contains(contentStr, "do it") {
+		t.Fatalf("exec log missing prompt content: %s", contentStr)
+	}
+}
+
+func TestHandleGenerateRespectsPackOutputs(t *testing.T) {
+	configDir := filepath.Join(t.TempDir(), "cfg")
+	if err := ensureConfigStructure(configDir); err != nil {
+		t.Fatalf("ensureConfigStructure: %v", err)
+	}
+	if err := bootstrapDefaults(configDir); err != nil {
+		t.Fatalf("bootstrapDefaults: %v", err)
+	}
+
+	customPack := "outputs:\n  - file: first.md\n    template: default.md\n  - file: second.md\n    template: default.md\n"
+	packPath := filepath.Join(configDir, packsDirName, "custom.yaml")
+	if err := os.WriteFile(packPath, []byte(customPack), 0o644); err != nil {
+		t.Fatalf("write pack: %v", err)
+	}
+
+	workdir := t.TempDir()
+	origWD, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("getwd: %v", err)
+	}
+	defer func() {
+		_ = os.Chdir(origWD)
+	}()
+	if err := os.Chdir(workdir); err != nil {
+		t.Fatalf("chdir: %v", err)
+	}
+
+	if err := handleGenerate(configDir, []string{"--pack", "custom", "--exec=false", "ship"}); err != nil {
+		t.Fatalf("handleGenerate returned error: %v", err)
+	}
+
+	for _, name := range []string{"first.md", "second.md"} {
+		data, err := os.ReadFile(name)
+		if err != nil {
+			t.Fatalf("read %s: %v", name, err)
+		}
+		if !strings.Contains(string(data), "ship") {
+			t.Fatalf("%s missing intent", name)
+		}
 	}
 }
 

@@ -39,20 +39,22 @@ sudo mv beet /usr/local/bin/
 ## 💡 Usage
 
 Key commands:
-- `beet [intent]` — generate WORK_PROMPT.md and agents.md (default template)
+- `beet [intent]` — generate pack outputs (default pack emits WORK_PROMPT.md + agents.md)
+- `beet -p <pack> [intent]` — use a specific pack from `~/.beet/packs`
 - `beet templates` — list available templates
-- `beet packs` — list available packs (default pack bootstrapped; generation currently uses the default single-output flow)
+- `beet packs` — list available packs (default pack bootstrapped)
 - `beet doctor` — show detected CLIs (Codex preferred, Copilot fallback)
 
 Flags:
-- `-t, --template <name>` — choose template (single-output flow)
-- `--dry-run` — render to stdout without writing files
-- `--exec` (default true) — run detected CLI with the rendered WORK_PROMPT.md
+- `-t, --template <name>` — override the WORK_PROMPT.md template when using the default pack
+- `-p, --pack <name>` — select a pack (default: `default`)
+- `--dry-run` — render all outputs to stdout with labels
+- `--exec` (default true) — send rendered prompts to the detected CLI and write its shaped output
 - `--force-agents` — allow overwriting agents.md
 
-CLI shaping: execution defaults to on; the detected CLI (Codex first, then Copilot) receives WORK_PROMPT.md. If no CLI is found and `--exec` is true, generation fails.
+CLI shaping: execution defaults to on; the detected CLI (Codex first, then Copilot) receives the full prompt (internal instruction + template + guidelines + intent) on stdin and its output is written to files. If no CLI is found and `--exec` is true, generation fails.
 
-Packs and multi-output: pack files are bootstrapped and listable, but generation currently writes only WORK_PROMPT.md plus agents.md. Pack-based multi-output generation will extend this to PRD/SRS/guidelines sets.
+Packs and multi-output: pack files define outputs and templates; all outputs are rendered per pack. The default pack emits WORK_PROMPT.md and agents.md; extended packs (e.g., PRD/SRS/guidelines) can be added to `~/.beet/packs`.
 
 ## 🧩 Template packs & placeholders (for custom templates)
 

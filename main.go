@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 )
@@ -110,4 +112,38 @@ func writeAgents(configDir, outputPath string, force bool) error {
 	}
 
 	return nil
+}
+
+func writeRenderedOutput(path string, content string, forceAgents bool) error {
+	if strings.EqualFold(filepath.Base(path), agentsFilename) {
+		if _, err := os.Stat(path); err == nil && !forceAgents {
+			return nil
+		}
+	}
+
+	if dir := filepath.Dir(path); dir != "." && dir != "" {
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			return fmt.Errorf("create output dir: %w", err)
+		}
+	}
+
+	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+		return fmt.Errorf("write %s: %w", path, err)
+	}
+	return nil
+}
+
+func runCLI(cli detectedCLI, prompt string) (string, error) {
+	cmd := exec.Command(cli.path)
+	cmd.Stdin = strings.NewReader(prompt)
+	cmd.Stderr = os.Stderr
+
+	var out bytes.Buffer
+	cmd.Stdout = &out
+
+	if err := cmd.Run(); err != nil {
+		return "", fmt.Errorf("%s exec failed: %w", cli.name, err)
+	}
+
+	return out.String(), nil
 }

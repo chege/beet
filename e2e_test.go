@@ -26,7 +26,7 @@ func TestE2EGenerateCreatesOutputs(t *testing.T) {
 	}
 
 	cliScript := filepath.Join(cliBinDir, "codex")
-	if err := os.WriteFile(cliScript, []byte("#!/bin/sh\nexit 0\n"), 0o755); err != nil {
+	if err := os.WriteFile(cliScript, []byte("#!/bin/sh\n/bin/cat\n"), 0o755); err != nil {
 		t.Fatalf("write fake codex: %v", err)
 	}
 
