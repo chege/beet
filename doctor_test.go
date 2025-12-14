@@ -10,6 +10,10 @@ import (
 func TestDetectPreferredCLIPriority(t *testing.T) {
 	binDir := t.TempDir()
 
+	claude := filepath.Join(binDir, "claude")
+	if err := os.WriteFile(claude, []byte("#!/bin/sh\nexit 0\n"), 0o755); err != nil {
+		t.Fatalf("write claude: %v", err)
+	}
 	copilot := filepath.Join(binDir, "copilot")
 	if err := os.WriteFile(copilot, []byte("#!/bin/sh\nexit 0\n"), 0o755); err != nil {
 		t.Fatalf("write copilot: %v", err)
@@ -39,7 +43,7 @@ func TestRunDoctorReportsMissing(t *testing.T) {
 	}
 
 	out := b.String()
-	if !strings.Contains(out, "codex:") || !strings.Contains(out, "copilot:") {
+	if !strings.Contains(out, "codex:") || !strings.Contains(out, "copilot:") || !strings.Contains(out, "claude:") {
 		t.Fatalf("doctor output missing entries: %s", out)
 	}
 	if !strings.Contains(out, "No supported CLI") {

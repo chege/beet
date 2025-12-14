@@ -12,7 +12,7 @@ type detectedCLI struct {
 	path string
 }
 
-var cliPriority = []string{"codex", "copilot"}
+var cliPriority = []string{"codex", "copilot", "claude"}
 
 func detectPreferredCLI() (detectedCLI, bool) {
 	for _, name := range cliPriority {
@@ -58,7 +58,7 @@ func runDoctor(w io.Writer) error {
 	}
 
 	if len(found) == 0 {
-		if _, err := fmt.Fprintln(w, "No supported CLI detected. Install Codex CLI or Copilot CLI."); err != nil {
+		if _, err := fmt.Fprintln(w, "No supported CLI detected. Install Codex CLI, Copilot CLI, or Claude Code CLI."); err != nil {
 			return err
 		}
 	}
@@ -69,7 +69,7 @@ func runDoctor(w io.Writer) error {
 func runDetectedCLI(promptPath string) error {
 	cli, ok := detectPreferredCLI()
 	if !ok {
-		return fmt.Errorf("no supported CLI found; install Codex CLI or Copilot CLI")
+		return fmt.Errorf("no supported CLI found; install Codex CLI, Copilot CLI, or Claude Code CLI")
 	}
 
 	cmd := exec.Command(cli.path, promptPath)
@@ -87,7 +87,7 @@ func runDetectedCLI(promptPath string) error {
 func requireCLI() (detectedCLI, error) {
 	cli, ok := detectPreferredCLI()
 	if !ok {
-		return detectedCLI{}, fmt.Errorf("no supported CLI found; install Codex CLI or Copilot CLI")
+		return detectedCLI{}, fmt.Errorf("no supported CLI found; install Codex CLI, Copilot CLI, or Claude Code CLI")
 	}
 	return cli, nil
 }

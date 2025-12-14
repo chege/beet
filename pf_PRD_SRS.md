@@ -218,6 +218,7 @@ BEET_CONFIG_DIR
 - Detect available CLIs in priority order:
   1. Codex CLI
   2. Copilot CLI
+  3. Claude Code CLI
 - Provide transparency via `beet doctor`
 - Fail clearly if `--exec` is requested and none are found
 

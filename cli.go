@@ -89,7 +89,7 @@ func handleGenerate(configDir string, args []string) error {
 		fmt.Fprintln(fs.Output(), "\nCommands: beet templates | beet packs | beet doctor")
 		fmt.Fprintln(fs.Output(), "Notes: packs are bootstrapped and selectable with -p/--pack (default, extended, comprehensive).")
 		fmt.Fprintln(fs.Output(), "       generation renders all outputs defined by the pack; -t/--template only overrides WORK_PROMPT.md in the default pack.")
-		fmt.Fprintln(fs.Output(), "       CLI execution defaults on (Codex preferred, Copilot fallback). Disable with --exec=false.")
+		fmt.Fprintln(fs.Output(), "       CLI execution defaults on (Codex preferred, then Copilot, then Claude Code). Disable with --exec=false.")
 	}
 
 	template := fs.String("t", "", "template name")
