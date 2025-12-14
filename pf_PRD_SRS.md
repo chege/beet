@@ -88,6 +88,16 @@ agents.md        # stable: how Codex should work
 WORK_PROMPT.md   # volatile: what Codex should do now
 ```
 
+### 7.1 File-Set Design (Adopted)
+
+We adopt Proposal 2 (Comprehensive Separation):
+- AGENTS.md — entrypoint, lists auxiliary files.
+- INTENT.md — structured interpretation of free-form requirements.
+- DESIGN.md — optional high-level solution outline when needed.
+- RULES.md — coding and quality guidelines.
+- PLAN.md — detailed work breakdown.
+- PROGRESS.md — optional progress tracker mirroring PLAN tasks.
+
 ---
 
 ### 8. Key Features (v1)
