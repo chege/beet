@@ -44,6 +44,8 @@ Key commands:
 - `beet templates` — list available templates
 - `beet packs` — list available packs (default pack bootstrapped)
 - `beet doctor` — show detected CLIs (Codex preferred, Copilot fallback)
+- `beet pack list|init|edit` — list or scaffold pack files in your config dir
+- `beet template new <name>` — scaffold a new template in your config dir
 - `beet config restore` — recopy bundled defaults into your config directory without overwriting existing files
 
 Flags:

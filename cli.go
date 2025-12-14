@@ -72,6 +72,14 @@ func main() {
 		if err := runDoctor(os.Stdout); err != nil {
 			log.Fatalf("doctor: %v", err)
 		}
+	case "pack":
+		if err := handlePackCommand(configDir, args[1:]); err != nil {
+			log.Fatalf("pack: %v", err)
+		}
+	case "template":
+		if err := handleTemplateCommand(configDir, args[1:]); err != nil {
+			log.Fatalf("template: %v", err)
+		}
 	case "config":
 		if err := handleConfig(configDir, args[1:]); err != nil {
 			log.Fatalf("config: %v", err)
@@ -91,6 +99,119 @@ func handleConfig(configDir string, args []string) error {
 	return restoreDefaults(configDir)
 }
 
+func handlePackCommand(configDir string, args []string) error {
+	if len(args) == 0 {
+		return fmt.Errorf("usage: beet pack [list|init|edit]")
+	}
+
+	switch args[0] {
+	case "list":
+		names, err := listPacks(configDir)
+		if err != nil {
+			return err
+		}
+		for _, name := range names {
+			fmt.Println(name)
+		}
+		return nil
+	case "init":
+		fs := flag.NewFlagSet("pack init", flag.ContinueOnError)
+		fs.SetOutput(os.Stdout)
+		name := fs.String("name", "", "pack name")
+		short := fs.String("n", "", "pack name")
+		if err := fs.Parse(args[1:]); err != nil {
+			if errors.Is(err, flag.ErrHelp) {
+				return nil
+			}
+			return err
+		}
+		packName := firstNonEmpty(*name, *short)
+		if strings.TrimSpace(packName) == "" {
+			return fmt.Errorf("pack name required")
+		}
+		filename := normalizePackName(packName)
+		path := filepath.Join(configDir, packsDirName, filename)
+		if _, err := os.Stat(path); err == nil {
+			return fmt.Errorf("pack %s already exists", filename)
+		}
+		content := "outputs:\n  - file: WORK_PROMPT.md\n    template: default.md\n"
+		if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+			return fmt.Errorf("write pack: %w", err)
+		}
+		return nil
+	case "edit":
+		if len(args) < 2 {
+			return fmt.Errorf("usage: beet pack edit <name>")
+		}
+		filename := normalizePackName(args[1])
+		path := filepath.Join(configDir, packsDirName, filename)
+		if _, err := os.Stat(path); err != nil {
+			return fmt.Errorf("pack %s not found: %w", filename, err)
+		}
+		return openForEdit(path)
+	default:
+		return fmt.Errorf("usage: beet pack [list|init|edit]")
+	}
+}
+
+func handleTemplateCommand(configDir string, args []string) error {
+	if len(args) == 0 {
+		return fmt.Errorf("usage: beet template new <name>")
+	}
+
+	switch args[0] {
+	case "new":
+		fs := flag.NewFlagSet("template new", flag.ContinueOnError)
+		fs.SetOutput(os.Stdout)
+		name := fs.String("name", "", "template name")
+		short := fs.String("n", "", "template name")
+		if err := fs.Parse(args[1:]); err != nil {
+			if errors.Is(err, flag.ErrHelp) {
+				return nil
+			}
+			return err
+		}
+		templateName := firstNonEmpty(*name, *short)
+		if strings.TrimSpace(templateName) == "" && len(fs.Args()) > 0 {
+			templateName = fs.Args()[0]
+		}
+		if strings.TrimSpace(templateName) == "" {
+			return fmt.Errorf("template name required")
+		}
+		filename := normalizeTemplateName(templateName)
+		path := filepath.Join(configDir, templatesDirName, filename)
+		if _, err := os.Stat(path); err == nil {
+			return fmt.Errorf("template %s already exists", filename)
+		}
+		content := "# New template\n\n{{intent}}\n\n{{guidelines}}\n"
+		if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+			return fmt.Errorf("write template: %w", err)
+		}
+		return nil
+	default:
+		return fmt.Errorf("usage: beet template new <name>")
+	}
+}
+
+func openForEdit(path string) error {
+	editor := strings.TrimSpace(os.Getenv("EDITOR"))
+	if editor != "" {
+		cmd := exec.Command(editor, path)
+		cmd.Stdin = os.Stdin
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		return cmd.Run()
+	}
+
+	if err := defaultBrowser.OpenFile(path); err != nil {
+		return fmt.Errorf("open default app: %w", err)
+	}
+	if err := waitForEdit(path); err != nil {
+		return fmt.Errorf("await default edit: %w", err)
+	}
+	return nil
+}
+
 func handleGenerate(configDir string, args []string) error {
 	fs := flag.NewFlagSet("beet", flag.ContinueOnError)
 	fs.SetOutput(os.Stdout)
@@ -98,7 +219,7 @@ func handleGenerate(configDir string, args []string) error {
 		fmt.Fprintln(fs.Output(), "Usage: beet [flags] [intent|file]")
 		fmt.Fprintln(fs.Output(), "\nFlags:")
 		fs.PrintDefaults()
-		fmt.Fprintln(fs.Output(), "\nCommands: beet templates | beet packs | beet doctor | beet config restore")
+		fmt.Fprintln(fs.Output(), "\nCommands: beet templates | beet packs | beet doctor | beet config restore | beet pack [list|init|edit] | beet template new")
 		fmt.Fprintln(fs.Output(), "Notes: packs are bootstrapped and selectable with -p/--pack (default, extended, comprehensive).")
 		fmt.Fprintln(fs.Output(), "       generation renders all outputs defined by the pack; -t/--template only overrides WORK_PROMPT.md in the default pack.")
 		fmt.Fprintln(fs.Output(), "       CLI execution defaults on (Codex preferred, then Copilot, then Claude Code). Disable with --exec=false.")
