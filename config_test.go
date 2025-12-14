@@ -58,6 +58,7 @@ func TestEnsureConfigStructure(t *testing.T) {
 		dir,
 		filepath.Join(dir, templatesDirName),
 		filepath.Join(dir, guidelinesDirName),
+		filepath.Join(dir, packsDirName),
 	} {
 		if info, err := os.Stat(path); err != nil || !info.IsDir() {
 			t.Fatalf("expected directory at %s, stat err: %v", path, err)
@@ -128,6 +129,31 @@ func TestListTemplatesSorted(t *testing.T) {
 
 	if !reflect.DeepEqual(names, sortedCopy(want)) {
 		t.Fatalf("listTemplates = %v, want %v", names, sortedCopy(want))
+	}
+}
+
+func TestListPacksSorted(t *testing.T) {
+	dir := filepath.Join(t.TempDir(), "cfg")
+	if err := ensureConfigStructure(dir); err != nil {
+		t.Fatalf("ensureConfigStructure returned error: %v", err)
+	}
+	if err := bootstrapDefaults(dir); err != nil {
+		t.Fatalf("bootstrapDefaults returned error: %v", err)
+	}
+
+	extra := filepath.Join(dir, packsDirName, "custom.yaml")
+	if err := os.WriteFile(extra, []byte("outputs: []"), 0o644); err != nil {
+		t.Fatalf("write pack: %v", err)
+	}
+
+	names, err := listPacks(dir)
+	if err != nil {
+		t.Fatalf("listPacks returned error: %v", err)
+	}
+
+	want := sortedCopy([]string{"custom.yaml", "default.yaml"})
+	if !reflect.DeepEqual(names, want) {
+		t.Fatalf("listPacks = %v, want %v", names, want)
 	}
 }
 

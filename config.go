@@ -13,15 +13,25 @@ const (
 	defaultConfigFolder = ".beet"
 	templatesDirName    = "templates"
 	guidelinesDirName   = "guidelines"
+	packsDirName        = "packs"
 	defaultTemplateName = "default.md"
 )
 
 var defaultTemplates = map[string]string{
 	"default.md": "## Task\n{{intent}}\n\n## Guidelines\n{{guidelines}}\n",
+	"agents.md":  "## Agents\n\n{{guidelines}}\n",
 }
 
 var defaultGuidelines = map[string]string{
 	"principles.md": "Be clear. Be concise. Prefer deterministic, reproducible instructions.",
+}
+
+var defaultPacks = map[string]string{
+	"default.yaml": "outputs:\n" +
+		"  - file: WORK_PROMPT.md\n" +
+		"    template: default.md\n" +
+		"  - file: agents.md\n" +
+		"    template: agents.md\n",
 }
 
 func resolveConfigDir() (string, error) {
@@ -50,6 +60,10 @@ func ensureConfigStructure(dir string) error {
 		return fmt.Errorf("create guidelines dir: %w", err)
 	}
 
+	if err := os.MkdirAll(filepath.Join(dir, packsDirName), 0o755); err != nil {
+		return fmt.Errorf("create packs dir: %w", err)
+	}
+
 	return nil
 }
 
@@ -62,6 +76,12 @@ func bootstrapDefaults(dir string) error {
 
 	for name, content := range defaultGuidelines {
 		if err := writeIfMissing(filepath.Join(dir, guidelinesDirName, name), content); err != nil {
+			return err
+		}
+	}
+
+	for name, content := range defaultPacks {
+		if err := writeIfMissing(filepath.Join(dir, packsDirName, name), content); err != nil {
 			return err
 		}
 	}
@@ -87,6 +107,24 @@ func listTemplates(configDir string) ([]string, error) {
 	entries, err := os.ReadDir(filepath.Join(configDir, templatesDirName))
 	if err != nil {
 		return nil, fmt.Errorf("read templates: %w", err)
+	}
+
+	var names []string
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		names = append(names, entry.Name())
+	}
+
+	sort.Strings(names)
+	return names, nil
+}
+
+func listPacks(configDir string) ([]string, error) {
+	entries, err := os.ReadDir(filepath.Join(configDir, packsDirName))
+	if err != nil {
+		return nil, fmt.Errorf("read packs: %w", err)
 	}
 
 	var names []string

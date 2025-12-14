@@ -59,6 +59,14 @@ func main() {
 		for _, name := range names {
 			fmt.Println(name)
 		}
+	case "packs":
+		names, err := listPacks(configDir)
+		if err != nil {
+			log.Fatalf("list packs: %v", err)
+		}
+		for _, name := range names {
+			fmt.Println(name)
+		}
 	case "doctor":
 		if err := runDoctor(os.Stdout); err != nil {
 			log.Fatalf("doctor: %v", err)
