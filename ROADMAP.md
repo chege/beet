@@ -17,12 +17,10 @@ to refine the intent into the templates.
 
 - Integration coverage for richer templates is minimal.
 - DX helpers: pack/template scaffolding commands are not implemented.
-- Input validation does not yet reject empty/whitespace intent when piping files/stdin.
 
 ## Required Work
 
 1) Add integration tests for richer templates across packs.
 2) DX helpers: `beet pack init/list/edit`, `beet template new` to reduce friction.
-3) Harden input validation (reject empty/whitespace intent from stdin/files/args).
 
-Last updated: 2025-12-14T20:48:31.574Z
+Last updated: 2025-12-14T20:55:30.435Z
