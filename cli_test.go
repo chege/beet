@@ -137,6 +137,44 @@ func TestIntentFromDefaultAppFallback(t *testing.T) {
 	}
 }
 
+func TestParseIntentRejectsEmptyFile(t *testing.T) {
+	tmpFile := filepath.Join(t.TempDir(), "intent.txt")
+	if err := os.WriteFile(tmpFile, []byte("  \n"), 0o644); err != nil {
+		t.Fatalf("write temp file: %v", err)
+	}
+
+	if _, err := parseIntent([]string{tmpFile}); err == nil {
+		t.Fatalf("parseIntent should error on empty file")
+	}
+}
+
+func TestParseIntentRejectsEmptyArgs(t *testing.T) {
+	if _, err := parseIntent([]string{"   ", "\n"}); err == nil {
+		t.Fatalf("parseIntent should error on empty args")
+	}
+}
+
+func TestParseIntentRejectsEmptyStdin(t *testing.T) {
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("pipe: %v", err)
+	}
+	if _, err := w.WriteString("   \n"); err != nil {
+		t.Fatalf("write stdin: %v", err)
+	}
+	if err := w.Close(); err != nil {
+		t.Fatalf("close pipe writer: %v", err)
+	}
+
+	origStdin := os.Stdin
+	os.Stdin = r
+	defer func() { os.Stdin = origStdin }()
+
+	if _, err := parseIntent(nil); err == nil {
+		t.Fatalf("parseIntent should error on empty stdin")
+	}
+}
+
 func TestHandleGenerateDryRun(t *testing.T) {
 	configDir := filepath.Join(t.TempDir(), "cfg")
 	if err := ensureConfigStructure(configDir); err != nil {

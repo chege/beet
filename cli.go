@@ -185,12 +185,17 @@ func parseIntent(remaining []string) (string, error) {
 					return "", fmt.Errorf("read intent file: %w", err)
 				}
 				intent := strings.TrimSpace(string(b))
-				if intent != "" {
-					return intent, nil
+				if intent == "" {
+					return "", fmt.Errorf("intent is empty; provide input")
 				}
+				return intent, nil
 			}
 		}
-		return strings.TrimSpace(strings.Join(remaining, " ")), nil
+		intent := strings.TrimSpace(strings.Join(remaining, " "))
+		if intent == "" {
+			return "", fmt.Errorf("intent is empty; provide input")
+		}
+		return intent, nil
 	}
 
 	info, err := os.Stdin.Stat()
@@ -200,9 +205,10 @@ func parseIntent(remaining []string) (string, error) {
 			return "", fmt.Errorf("read stdin: %w", err)
 		}
 		intent := strings.TrimSpace(string(b))
-		if intent != "" {
-			return intent, nil
+		if intent == "" {
+			return "", fmt.Errorf("intent is empty; provide input")
 		}
+		return intent, nil
 	}
 
 	return intentFromEditor()
