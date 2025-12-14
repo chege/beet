@@ -21,8 +21,11 @@ const (
 )
 
 var defaultTemplates = map[string]string{
-	"default.md": "## Task\n{{intent}}\n\n## Guidelines\n{{guidelines}}\n",
-	"agents.md":  "## Agents\n\n{{guidelines}}\n",
+	"default.md":    "## Task\n{{intent}}\n\n## Guidelines\n{{guidelines}}\n",
+	"agents.md":     "## Agents\n\n{{guidelines}}\n",
+	"prd.md":        "# Product Requirements\n\n{{intent}}\n\n## Guidelines\n{{guidelines}}\n",
+	"srs.md":        "# Software Requirements Specification\n\n{{intent}}\n\n## Guidelines\n{{guidelines}}\n",
+	"guidelines.md": "# Guidelines\n\n{{guidelines}}\n",
 }
 
 var defaultGuidelines = map[string]string{
@@ -35,6 +38,17 @@ var defaultPacks = map[string]string{
 		"    template: default.md\n" +
 		"  - file: agents.md\n" +
 		"    template: agents.md\n",
+	"extended.yaml": "outputs:\n" +
+		"  - file: WORK_PROMPT.md\n" +
+		"    template: default.md\n" +
+		"  - file: agents.md\n" +
+		"    template: agents.md\n" +
+		"  - file: PRD.md\n" +
+		"    template: prd.md\n" +
+		"  - file: SRS.md\n" +
+		"    template: srs.md\n" +
+		"  - file: GUIDELINES.md\n" +
+		"    template: guidelines.md\n",
 }
 
 func resolveConfigDir() (string, error) {

@@ -40,7 +40,7 @@ sudo mv beet /usr/local/bin/
 
 Key commands:
 - `beet [intent]` — generate pack outputs (default pack emits WORK_PROMPT.md + agents.md)
-- `beet -p <pack> [intent]` — use a specific pack from `~/.beet/packs`
+- `beet -p <pack> [intent]` — use a specific pack from `~/.beet/packs` (e.g., `extended`)
 - `beet templates` — list available templates
 - `beet packs` — list available packs (default pack bootstrapped)
 - `beet doctor` — show detected CLIs (Codex preferred, Copilot fallback)
@@ -55,6 +55,7 @@ Flags:
 CLI shaping: execution defaults to on; the detected CLI (Codex first, then Copilot) receives the full prompt (internal instruction + template + guidelines + intent) on stdin and its output is written to files. If no CLI is found and `--exec` is true, generation fails.
 
 Packs and multi-output: pack files define outputs and templates; all outputs are rendered per pack. The default pack emits WORK_PROMPT.md and agents.md; extended packs (e.g., PRD/SRS/guidelines) can be added to `~/.beet/packs`.
+Built-in packs: `default` (WORK_PROMPT.md, agents.md) and `extended` (adds PRD.md, SRS.md, GUIDELINES.md).
 
 ## 🧩 Template packs & placeholders (for custom templates)
 

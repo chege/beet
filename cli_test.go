@@ -274,6 +274,46 @@ func TestHandleGenerateRespectsPackOutputs(t *testing.T) {
 	}
 }
 
+func TestHandleGenerateExtendedPack(t *testing.T) {
+	configDir := filepath.Join(t.TempDir(), "cfg")
+	if err := ensureConfigStructure(configDir); err != nil {
+		t.Fatalf("ensureConfigStructure: %v", err)
+	}
+	if err := bootstrapDefaults(configDir); err != nil {
+		t.Fatalf("bootstrapDefaults: %v", err)
+	}
+
+	workdir := t.TempDir()
+	origWD, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("getwd: %v", err)
+	}
+	defer func() {
+		_ = os.Chdir(origWD)
+	}()
+	if err := os.Chdir(workdir); err != nil {
+		t.Fatalf("chdir: %v", err)
+	}
+
+	if err := handleGenerate(configDir, []string{"--pack", "extended", "--exec=false", "plan release"}); err != nil {
+		t.Fatalf("handleGenerate returned error: %v", err)
+	}
+
+	checkContains := func(name, substr string) {
+		data, err := os.ReadFile(name)
+		if err != nil {
+			t.Fatalf("read %s: %v", name, err)
+		}
+		if !strings.Contains(string(data), substr) {
+			t.Fatalf("%s missing expected content", name)
+		}
+	}
+
+	checkContains("PRD.md", "plan release")
+	checkContains("SRS.md", "plan release")
+	checkContains("GUIDELINES.md", "Guidelines")
+}
+
 func TestHandleGenerateUsesEditorWhenNoArgs(t *testing.T) {
 	configDir := filepath.Join(t.TempDir(), "cfg")
 	if err := ensureConfigStructure(configDir); err != nil {
