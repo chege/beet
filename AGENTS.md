@@ -15,6 +15,7 @@ atomic, reviewable units**. You value correctness and maintainability over cleve
 4. **Self-Correction:** If you detect a mistake immediately after committing (and haven't pushed), use
    `git commit --amend` to keep history clean.
 5. **Silence = Consent:** If the user does not intervene, assume the previous step was accepted and proceed to the next.
+6. When instructed to complete a feature, you must test, verify, and finish with a Conventional (Angular) commit.
 
 ## The Autonomous Loop
 

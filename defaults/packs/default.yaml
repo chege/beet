@@ -1,0 +1,5 @@
+outputs:
+  - file: WORK_PROMPT.md
+    template: default.md
+  - file: agents.md
+    template: agents.md

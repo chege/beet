@@ -1,0 +1,15 @@
+outputs:
+  - file: WORK_PROMPT.md
+    template: default.md
+  - file: agents.md
+    template: agents.md
+  - file: INTENT.md
+    template: intent.md
+  - file: DESIGN.md
+    template: design.md
+  - file: RULES.md
+    template: rules.md
+  - file: PLAN.md
+    template: plan.md
+  - file: PROGRESS.md
+    template: progress.md

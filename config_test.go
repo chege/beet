@@ -121,9 +121,13 @@ func TestBootstrapDefaultsCreatesDefaultPack(t *testing.T) {
 		t.Fatalf("read default pack: %v", err)
 	}
 
-	want := defaultPacks["default.yaml"]
-	if string(got) != want {
-		t.Fatalf("default pack content mismatch:\n got: %s\nwant: %s", string(got), want)
+	want, err := os.ReadFile(filepath.Join("defaults", "packs", "default.yaml"))
+	if err != nil {
+		t.Fatalf("read source default pack: %v", err)
+	}
+
+	if string(got) != string(want) {
+		t.Fatalf("default pack content mismatch:\n got: %s\nwant: %s", string(got), string(want))
 	}
 }
 
@@ -143,9 +147,12 @@ func TestBootstrapDefaultsCreatesExtendedPack(t *testing.T) {
 		t.Fatalf("read extended pack: %v", err)
 	}
 
-	want := defaultPacks["extended.yaml"]
-	if string(got) != want {
-		t.Fatalf("extended pack content mismatch:\n got: %s\nwant: %s", string(got), want)
+	want, err := os.ReadFile(filepath.Join("defaults", "packs", "extended.yaml"))
+	if err != nil {
+		t.Fatalf("read source extended pack: %v", err)
+	}
+	if string(got) != string(want) {
+		t.Fatalf("extended pack content mismatch:\n got: %s\nwant: %s", string(got), string(want))
 	}
 }
 
@@ -165,9 +172,59 @@ func TestBootstrapDefaultsCreatesComprehensivePack(t *testing.T) {
 		t.Fatalf("read comprehensive pack: %v", err)
 	}
 
-	want := defaultPacks["comprehensive.yaml"]
-	if string(got) != want {
-		t.Fatalf("comprehensive pack content mismatch:\n got: %s\nwant: %s", string(got), want)
+	want, err := os.ReadFile(filepath.Join("defaults", "packs", "comprehensive.yaml"))
+	if err != nil {
+		t.Fatalf("read source comprehensive pack: %v", err)
+	}
+	if string(got) != string(want) {
+		t.Fatalf("comprehensive pack content mismatch:\n got: %s\nwant: %s", string(got), string(want))
+	}
+}
+
+func TestRestoreDefaultsNonDestructive(t *testing.T) {
+	dir := filepath.Join(t.TempDir(), "cfg")
+	if err := ensureConfigStructure(dir); err != nil {
+		t.Fatalf("ensureConfigStructure returned error: %v", err)
+	}
+
+	if err := bootstrapDefaults(dir); err != nil {
+		t.Fatalf("bootstrapDefaults returned error: %v", err)
+	}
+
+	defaultPath := filepath.Join(dir, templatesDirName, "default.md")
+	custom := []byte("custom content")
+	if err := os.WriteFile(defaultPath, custom, 0o644); err != nil {
+		t.Fatalf("overwrite default template: %v", err)
+	}
+
+	missing := filepath.Join(dir, templatesDirName, "prd.md")
+	if err := os.Remove(missing); err != nil {
+		t.Fatalf("remove template: %v", err)
+	}
+
+	if err := restoreDefaults(dir); err != nil {
+		t.Fatalf("restoreDefaults returned error: %v", err)
+	}
+
+	after, err := os.ReadFile(defaultPath)
+	if err != nil {
+		t.Fatalf("read default template: %v", err)
+	}
+	if !reflect.DeepEqual(after, custom) {
+		t.Fatalf("default template overwritten during restore")
+	}
+
+	restored, err := os.ReadFile(missing)
+	if err != nil {
+		t.Fatalf("read restored template: %v", err)
+	}
+	source, err := os.ReadFile(filepath.Join("defaults", "templates", "prd.md"))
+	if err != nil {
+		t.Fatalf("read source template: %v", err)
+	}
+
+	if string(restored) != string(source) {
+		t.Fatalf("restored template mismatch: got %q want %q", string(restored), string(source))
 	}
 }
 
@@ -216,14 +273,17 @@ func TestListTemplatesSorted(t *testing.T) {
 		t.Fatalf("listTemplates returned error: %v", err)
 	}
 
-	want := make([]string, 0, len(defaultTemplates))
-	for name := range defaultTemplates {
-		want = append(want, name)
+	sourceNames, err := os.ReadDir(filepath.Join("defaults", "templates"))
+	if err != nil {
+		t.Fatalf("read default templates dir: %v", err)
 	}
-	if len(names) != len(want) {
-		t.Fatalf("listTemplates len=%d, want %d", len(names), len(want))
+	var want []string
+	for _, entry := range sourceNames {
+		if entry.IsDir() {
+			continue
+		}
+		want = append(want, entry.Name())
 	}
-
 	if !reflect.DeepEqual(names, sortedCopy(want)) {
 		t.Fatalf("listTemplates = %v, want %v", names, sortedCopy(want))
 	}

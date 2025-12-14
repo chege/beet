@@ -1,0 +1,11 @@
+outputs:
+  - file: WORK_PROMPT.md
+    template: default.md
+  - file: agents.md
+    template: agents.md
+  - file: PRD.md
+    template: prd.md
+  - file: SRS.md
+    template: srs.md
+  - file: GUIDELINES.md
+    template: guidelines.md

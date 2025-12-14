@@ -1,7 +1,9 @@
 package main
 
 import (
+	"embed"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"sort"
@@ -20,56 +22,8 @@ const (
 	defaultPackName     = "default.yaml"
 )
 
-var defaultTemplates = map[string]string{
-	"default.md":    "## Task\n{{intent}}\n\n## Guidelines\n{{guidelines}}\n",
-	"agents.md":     "## Agents\n\n{{guidelines}}\n",
-	"prd.md":        "# Product Requirements\n\n{{intent}}\n\n## Guidelines\n{{guidelines}}\n",
-	"srs.md":        "# Software Requirements Specification\n\n{{intent}}\n\n## Guidelines\n{{guidelines}}\n",
-	"guidelines.md": "# Guidelines\n\n{{guidelines}}\n",
-	"intent.md":     "# Intent\n\n{{intent}}\n",
-	"design.md":     "# Design\n\n{{intent}}\n\n## Notes\n{{guidelines}}\n",
-	"rules.md":      "# Rules\n\n{{guidelines}}\n",
-	"plan.md":       "# Plan\n\n- [ ] {{intent}}\n",
-	"progress.md":   "# Progress\n\n- [ ] Not started\n",
-}
-
-var defaultGuidelines = map[string]string{
-	"principles.md": "Be clear. Be concise. Prefer deterministic, reproducible instructions.",
-}
-
-var defaultPacks = map[string]string{
-	"default.yaml": "outputs:\n" +
-		"  - file: WORK_PROMPT.md\n" +
-		"    template: default.md\n" +
-		"  - file: agents.md\n" +
-		"    template: agents.md\n",
-	"extended.yaml": "outputs:\n" +
-		"  - file: WORK_PROMPT.md\n" +
-		"    template: default.md\n" +
-		"  - file: agents.md\n" +
-		"    template: agents.md\n" +
-		"  - file: PRD.md\n" +
-		"    template: prd.md\n" +
-		"  - file: SRS.md\n" +
-		"    template: srs.md\n" +
-		"  - file: GUIDELINES.md\n" +
-		"    template: guidelines.md\n",
-	"comprehensive.yaml": "outputs:\n" +
-		"  - file: WORK_PROMPT.md\n" +
-		"    template: default.md\n" +
-		"  - file: agents.md\n" +
-		"    template: agents.md\n" +
-		"  - file: INTENT.md\n" +
-		"    template: intent.md\n" +
-		"  - file: DESIGN.md\n" +
-		"    template: design.md\n" +
-		"  - file: RULES.md\n" +
-		"    template: rules.md\n" +
-		"  - file: PLAN.md\n" +
-		"    template: plan.md\n" +
-		"  - file: PROGRESS.md\n" +
-		"    template: progress.md\n",
-}
+//go:embed defaults/* defaults/*/*
+var embeddedDefaults embed.FS
 
 func resolveConfigDir() (string, error) {
 	if override := os.Getenv(envConfigDir); override != "" {
@@ -104,26 +58,39 @@ func ensureConfigStructure(dir string) error {
 	return nil
 }
 
+func copyDefaults(dir string) error {
+	return fs.WalkDir(embeddedDefaults, "defaults", func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if path == "defaults" {
+			return nil
+		}
+
+		rel, err := filepath.Rel("defaults", path)
+		if err != nil {
+			return fmt.Errorf("rel path for %s: %w", path, err)
+		}
+		target := filepath.Join(dir, rel)
+
+		if d.IsDir() {
+			if err := os.MkdirAll(target, 0o755); err != nil {
+				return fmt.Errorf("create dir %s: %w", target, err)
+			}
+			return nil
+		}
+
+		data, err := embeddedDefaults.ReadFile(path)
+		if err != nil {
+			return fmt.Errorf("read default %s: %w", path, err)
+		}
+
+		return writeIfMissing(target, string(data))
+	})
+}
+
 func bootstrapDefaults(dir string) error {
-	for name, content := range defaultTemplates {
-		if err := writeIfMissing(filepath.Join(dir, templatesDirName, name), content); err != nil {
-			return err
-		}
-	}
-
-	for name, content := range defaultGuidelines {
-		if err := writeIfMissing(filepath.Join(dir, guidelinesDirName, name), content); err != nil {
-			return err
-		}
-	}
-
-	for name, content := range defaultPacks {
-		if err := writeIfMissing(filepath.Join(dir, packsDirName, name), content); err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return copyDefaults(dir)
 }
 
 func writeIfMissing(path, content string) error {
@@ -292,6 +259,10 @@ func requireConfigState(configDir string) error {
 	}
 
 	return nil
+}
+
+func restoreDefaults(configDir string) error {
+	return copyDefaults(configDir)
 }
 
 func prepareConfig() (string, error) {

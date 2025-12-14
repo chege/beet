@@ -44,6 +44,7 @@ Key commands:
 - `beet templates` — list available templates
 - `beet packs` — list available packs (default pack bootstrapped)
 - `beet doctor` — show detected CLIs (Codex preferred, Copilot fallback)
+- `beet config restore` — recopy bundled defaults into your config directory without overwriting existing files
 
 Flags:
 - `-t, --template <name>` — override the WORK_PROMPT.md template when using the default pack
@@ -56,6 +57,8 @@ CLI shaping: execution defaults to on; the detected CLI (Codex first, then Copil
 
 Packs and multi-output: pack files define outputs and templates; all outputs are rendered per pack. The default pack emits WORK_PROMPT.md and agents.md; extended packs (e.g., PRD/SRS/guidelines) and comprehensive packs (AGENTS/INTENT/DESIGN/RULES/PLAN/PROGRESS) can be added to `~/.beet/packs`.
 Built-in packs: `default` (WORK_PROMPT.md, agents.md), `extended` (adds PRD.md, SRS.md, GUIDELINES.md), and `comprehensive` (adds INTENT.md, DESIGN.md, RULES.md, PLAN.md, PROGRESS.md).
+
+Defaults: bundled templates, guidelines, and pack files live under `defaults/` in the repo. On first run Beet copies these into your config directory (`~/.beet` by default) without overwriting existing files; run `beet config restore` to re-copy any missing defaults later.
 
 ## 🧩 Template packs & placeholders (for custom templates)
 

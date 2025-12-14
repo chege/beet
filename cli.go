@@ -72,11 +72,23 @@ func main() {
 		if err := runDoctor(os.Stdout); err != nil {
 			log.Fatalf("doctor: %v", err)
 		}
+	case "config":
+		if err := handleConfig(configDir, args[1:]); err != nil {
+			log.Fatalf("config: %v", err)
+		}
 	default:
 		if err := handleGenerate(configDir, args); err != nil {
 			log.Fatalf("generate prompt: %v", err)
 		}
 	}
+}
+
+func handleConfig(configDir string, args []string) error {
+	if len(args) == 0 || args[0] != "restore" {
+		return fmt.Errorf("usage: beet config restore")
+	}
+
+	return restoreDefaults(configDir)
 }
 
 func handleGenerate(configDir string, args []string) error {
@@ -86,7 +98,7 @@ func handleGenerate(configDir string, args []string) error {
 		fmt.Fprintln(fs.Output(), "Usage: beet [flags] [intent|file]")
 		fmt.Fprintln(fs.Output(), "\nFlags:")
 		fs.PrintDefaults()
-		fmt.Fprintln(fs.Output(), "\nCommands: beet templates | beet packs | beet doctor")
+		fmt.Fprintln(fs.Output(), "\nCommands: beet templates | beet packs | beet doctor | beet config restore")
 		fmt.Fprintln(fs.Output(), "Notes: packs are bootstrapped and selectable with -p/--pack (default, extended, comprehensive).")
 		fmt.Fprintln(fs.Output(), "       generation renders all outputs defined by the pack; -t/--template only overrides WORK_PROMPT.md in the default pack.")
 		fmt.Fprintln(fs.Output(), "       CLI execution defaults on (Codex preferred, then Copilot, then Claude Code). Disable with --exec=false.")

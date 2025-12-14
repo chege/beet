@@ -101,10 +101,12 @@ func TestWriteAgentsCreatesFile(t *testing.T) {
 	if !strings.Contains(string(content), "Agents") {
 		t.Fatalf("agents file missing header: %s", string(content))
 	}
-	for _, text := range defaultGuidelines {
-		if !strings.Contains(string(content), text) {
-			t.Fatalf("agents file missing guideline content %q", text)
-		}
+	expectedGuideline, err := os.ReadFile(filepath.Join("defaults", "guidelines", "principles.md"))
+	if err != nil {
+		t.Fatalf("read default guideline: %v", err)
+	}
+	if !strings.Contains(string(content), string(expectedGuideline)) {
+		t.Fatalf("agents file missing guideline content %q", string(expectedGuideline))
 	}
 }
 
@@ -139,5 +141,37 @@ func TestWriteAgentsRespectsForce(t *testing.T) {
 	updated, _ := os.ReadFile(output)
 	if string(updated) == original {
 		t.Fatalf("agents file not overwritten with force")
+	}
+}
+
+func TestHandleConfigRestore(t *testing.T) {
+	configDir := filepath.Join(t.TempDir(), "cfg")
+	if err := ensureConfigStructure(configDir); err != nil {
+		t.Fatalf("ensureConfigStructure: %v", err)
+	}
+	if err := bootstrapDefaults(configDir); err != nil {
+		t.Fatalf("bootstrapDefaults: %v", err)
+	}
+
+	defaultPath := filepath.Join(configDir, templatesDirName, "default.md")
+	custom := []byte("custom content")
+	if err := os.WriteFile(defaultPath, custom, 0o644); err != nil {
+		t.Fatalf("write custom default: %v", err)
+	}
+
+	missing := filepath.Join(configDir, templatesDirName, "guidelines.md")
+	if err := os.Remove(missing); err != nil {
+		t.Fatalf("remove template: %v", err)
+	}
+
+	if err := handleConfig(configDir, []string{"restore"}); err != nil {
+		t.Fatalf("handleConfig returned error: %v", err)
+	}
+
+	if content, _ := os.ReadFile(defaultPath); string(content) != string(custom) {
+		t.Fatalf("restore overwrote existing file")
+	}
+	if _, err := os.Stat(missing); err != nil {
+		t.Fatalf("restore should recreate missing file: %v", err)
 	}
 }
