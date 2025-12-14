@@ -14,6 +14,7 @@ to refine the intent into the templates.
 ## Known Gaps
 
 - Pack selection/generation missing: cannot select grouped outputs or emit PRD/SRS/guidelines sets.
+- LLM shaping missing: detected CLI only receives WORK_PROMPT.md path; no pipeline that lets the CLI rewrite outputs.
 - No multi-output loop: only WORK_PROMPT.md (+agents.md) is written; no per-output handling, labelling, or force rules
   beyond agents.md.
 - Config/schema gaps: missing-template validation; docs/help do not cover packs/exec behavior.
@@ -23,14 +24,16 @@ to refine the intent into the templates.
 
 1) Template packs: support selecting packs via `-p/--pack` and render outputs from pack definitions; ship an extended
    pack for PRD/SRS/guidelines.
-2) Multi-output render: for each pack output, render intent + guidelines through the specified template; honor
+2) CLI shaping: send full prompt context to the detected CLI (Codex/Copilot) to produce final file content; make this
+   the default path with an option for deterministic offline mode.
+3) Multi-output render: for each pack output, render intent + guidelines through the specified template; honor
    `--dry-run` (print all), `--force-agents` (only gates agents.md), and fail if a template is missing.
-3) Determinism and parity: ensure identical intent and pack yield identical outputs regardless of input source (
+4) Determinism and parity: ensure identical intent and pack yield identical outputs regardless of input source (
    args/file/stdin/editor). Add tests for pack parsing, multi-file writes, dry-run output labelling, force-agents
    behavior, and CLI invocation wiring.
-4) Docs/help: update README and `--help` to describe packs, multi-output behavior, CLI shaping, and the new flags.
-5) Integration tests: extend e2e to cover pack selection and multi-file creation (with a fake CLI).
-6) DX helpers: keep config files editable directly, but add optional helpers (`beet pack init/list/edit`,
+5) Docs/help: update README and `--help` to describe packs, multi-output behavior, CLI shaping, and the new flags.
+6) Integration tests: extend e2e to cover pack selection and multi-file creation (with a fake CLI).
+7) DX helpers: keep config files editable directly, but add optional helpers (`beet pack init/list/edit`,
     `beet template new`) to scaffold and list packs/templates to reduce user friction and errors.
 
 Last updated: 2025-12-14T18:03:25.424Z
