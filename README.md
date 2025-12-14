@@ -44,6 +44,22 @@ Run the CLI with --help to see available commands and options:
 beet --help
 ```
 
+## 🧩 Template packs & placeholders (for custom templates)
+
+When creating your own pack templates, these global placeholders are available (designed for Copilot/Codex-facing prompts and personal projects):
+
+- `{{intent}}` – the raw goal or task.
+- `{{background}}` – any repo/project context the model should know.
+- `{{goals}}` – the outcomes you want.
+- `{{requirements}}` – must-haves or constraints to honor.
+- `{{assumptions}}` – what you’re presuming is true.
+- `{{constraints}}` – limits like time/scope/resources.
+- `{{risks}}` – concerns and mitigations worth calling out.
+- `{{deliverables}}` – files/artifacts expected.
+- `{{acceptance_criteria}}` – how success is judged.
+- `{{guidelines}}` – style/ops rules to follow.
+- `{{open_questions}}` – unknowns to resolve.
+
 ## ⚙️ CI
 
 The repository uses a GitHub Actions workflow (CI) that runs tests and golangci-lint. The CI supports manual runs via the workflow_dispatch trigger.
