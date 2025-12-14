@@ -171,6 +171,37 @@ func TestBootstrapDefaultsCreatesComprehensivePack(t *testing.T) {
 	}
 }
 
+func TestRequireConfigStateErrorsWithoutPacks(t *testing.T) {
+	dir := filepath.Join(t.TempDir(), "cfg")
+	if err := ensureConfigStructure(dir); err != nil {
+		t.Fatalf("ensureConfigStructure returned error: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, templatesDirName, "default.md"), []byte("content"), 0o644); err != nil {
+		t.Fatalf("write template: %v", err)
+	}
+
+	if err := requireConfigState(dir); err == nil {
+		t.Fatalf("requireConfigState should error when no packs exist")
+	}
+}
+
+func TestRequireConfigStateSucceedsWithTemplatesAndPacks(t *testing.T) {
+	dir := filepath.Join(t.TempDir(), "cfg")
+	if err := ensureConfigStructure(dir); err != nil {
+		t.Fatalf("ensureConfigStructure returned error: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, templatesDirName, "default.md"), []byte("content"), 0o644); err != nil {
+		t.Fatalf("write template: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, packsDirName, "default.yaml"), []byte("outputs: []"), 0o644); err != nil {
+		t.Fatalf("write pack: %v", err)
+	}
+
+	if err := requireConfigState(dir); err != nil {
+		t.Fatalf("requireConfigState returned error: %v", err)
+	}
+}
+
 func TestListTemplatesSorted(t *testing.T) {
 	dir := filepath.Join(t.TempDir(), "cfg")
 	if err := ensureConfigStructure(dir); err != nil {

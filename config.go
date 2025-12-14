@@ -274,6 +274,26 @@ func loadPack(configDir, name string) (pack, error) {
 	return p, nil
 }
 
+func requireConfigState(configDir string) error {
+	packs, err := listPacks(configDir)
+	if err != nil {
+		return err
+	}
+	if len(packs) == 0 {
+		return fmt.Errorf("no packs found in %s; add a pack or re-run bootstrap", filepath.Join(configDir, packsDirName))
+	}
+
+	templates, err := listTemplates(configDir)
+	if err != nil {
+		return err
+	}
+	if len(templates) == 0 {
+		return fmt.Errorf("no templates found in %s; add a template or re-run bootstrap", filepath.Join(configDir, templatesDirName))
+	}
+
+	return nil
+}
+
 func prepareConfig() (string, error) {
 	dir, err := resolveConfigDir()
 	if err != nil {

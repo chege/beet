@@ -106,6 +106,10 @@ func handleGenerate(configDir string, args []string) error {
 		return err
 	}
 
+	if err := requireConfigState(configDir); err != nil {
+		return err
+	}
+
 	intent, err := parseIntent(fs.Args())
 	if err != nil {
 		return err
