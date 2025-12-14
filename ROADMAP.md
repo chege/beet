@@ -30,9 +30,9 @@ to refine the intent into the templates.
 2) Multi-output render: for each pack output, render intent + guidelines through the specified template; honor
    `--dry-run` (print all), `--force-agents` (only gates agents.md), and fail if a template is missing.
 3) CLI integration for shaping: introduce a mode where the rendered prompt (internal instruction + template +
-   guidelines + intent) is sent to the detected CLI (Codex preferred, Copilot fallback) to produce the final file
-   content. Make this the default path for generation (configurable to allow offline deterministic mode). Handle clear
-   errors when no CLI is present.
+   guidelines + intent) is sent to the detected CLI (prefer Codex CLI if present, otherwise Copilot CLI) to produce the
+   final file content. Make this the default path for generation (configurable to allow offline deterministic mode).
+   Detect both CLIs, pick the first available in that order, and surface a clear error when neither is present.
 4) Determinism and parity: ensure identical intent and pack yield identical outputs regardless of input source (
    args/file/stdin/editor). Add tests for pack parsing, multi-file writes, dry-run output labelling, force-agents
    behavior, and CLI invocation wiring.
