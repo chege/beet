@@ -33,4 +33,4 @@ to refine the intent into the templates.
 6) DX helpers: keep config files editable directly, but add optional helpers (`beet pack init/list/edit`,
     `beet template new`) to scaffold and list packs/templates to reduce user friction and errors.
 
-Last updated: 2025-12-14T17:58:23.088Z
+Last updated: 2025-12-14T18:03:25.424Z
