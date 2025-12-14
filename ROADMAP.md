@@ -13,12 +13,14 @@ to refine the intent into the templates.
 
 ## Known Gaps
 
+- Comprehensive separation pack (AGENTS/INTENT/DESIGN/RULES/PLAN/PROGRESS) not shipped.
 - Integration coverage for richer templates is minimal.
 - DX helpers: pack/template scaffolding commands are not implemented.
 
 ## Required Work
 
-1) Add integration tests for richer templates across packs.
-2) DX helpers: `beet pack init/list/edit`, `beet template new` to reduce friction.
+1) Ship a comprehensive pack aligned to Proposal 2 (AGENTS, INTENT, DESIGN, RULES, PLAN, PROGRESS).
+2) Add integration tests for richer templates across packs.
+3) DX helpers: `beet pack init/list/edit`, `beet template new` to reduce friction.
 
-Last updated: 2025-12-14T18:42:52.482Z
+Last updated: 2025-12-14T20:18:21.735Z
