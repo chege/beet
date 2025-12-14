@@ -85,6 +85,9 @@ func handleGenerate(configDir string, args []string) error {
 		fmt.Fprintln(fs.Output(), "Usage: beet [flags] [intent|file]")
 		fmt.Fprintln(fs.Output(), "\nFlags:")
 		fs.PrintDefaults()
+		fmt.Fprintln(fs.Output(), "\nCommands: beet templates | beet packs | beet doctor")
+		fmt.Fprintln(fs.Output(), "Notes: packs are bootstrapped and listable; generation currently writes WORK_PROMPT.md + agents.md.")
+		fmt.Fprintln(fs.Output(), "       CLI execution defaults on (Codex preferred, Copilot fallback). Disable with --exec=false.")
 	}
 
 	template := fs.String("t", "", "template name")

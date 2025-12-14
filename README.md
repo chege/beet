@@ -38,11 +38,21 @@ sudo mv beet /usr/local/bin/
 
 ## 💡 Usage
 
-Run the CLI with --help to see available commands and options:
+Key commands:
+- `beet [intent]` — generate WORK_PROMPT.md and agents.md (default template)
+- `beet templates` — list available templates
+- `beet packs` — list available packs (default pack bootstrapped; generation currently uses the default single-output flow)
+- `beet doctor` — show detected CLIs (Codex preferred, Copilot fallback)
 
-```bash
-beet --help
-```
+Flags:
+- `-t, --template <name>` — choose template (single-output flow)
+- `--dry-run` — render to stdout without writing files
+- `--exec` (default true) — run detected CLI with the rendered WORK_PROMPT.md
+- `--force-agents` — allow overwriting agents.md
+
+CLI shaping: execution defaults to on; the detected CLI (Codex first, then Copilot) receives WORK_PROMPT.md. If no CLI is found and `--exec` is true, generation fails.
+
+Packs and multi-output: pack files are bootstrapped and listable, but generation currently writes only WORK_PROMPT.md plus agents.md. Pack-based multi-output generation will extend this to PRD/SRS/guidelines sets.
 
 ## 🧩 Template packs & placeholders (for custom templates)
 
