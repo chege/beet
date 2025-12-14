@@ -91,7 +91,7 @@ func handleGenerate(configDir string, args []string) error {
 	templateLong := fs.String("template", "", "template name")
 	dryRun := fs.Bool("dry-run", false, "render without writing files")
 	forceAgents := fs.Bool("force-agents", false, "overwrite agents.md")
-	execFlag := fs.Bool("exec", false, "execute detected CLI with WORK_PROMPT.md")
+	execFlag := fs.Bool("exec", true, "execute detected CLI with WORK_PROMPT.md")
 
 	if err := fs.Parse(args); err != nil {
 		if errors.Is(err, flag.ErrHelp) {

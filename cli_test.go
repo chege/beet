@@ -33,7 +33,7 @@ func TestHandleGenerateCreatesWorkPrompt(t *testing.T) {
 		t.Fatalf("chdir: %v", err)
 	}
 
-	if err := handleGenerate(configDir, []string{"-t", "default", "ship", "it"}); err != nil {
+	if err := handleGenerate(configDir, []string{"-t", "default", "--exec=false", "ship", "it"}); err != nil {
 		t.Fatalf("handleGenerate returned error: %v", err)
 	}
 
@@ -266,7 +266,7 @@ func TestHandleGenerateUsesEditorWhenNoArgs(t *testing.T) {
 	os.Stdin = devNull
 	defer func() { os.Stdin = origStdin }()
 
-	if err := handleGenerate(configDir, nil); err != nil {
+	if err := handleGenerate(configDir, []string{"--exec=false"}); err != nil {
 		t.Fatalf("handleGenerate returned error: %v", err)
 	}
 

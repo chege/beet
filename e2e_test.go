@@ -17,6 +17,7 @@ func TestE2EGenerateCreatesOutputs(t *testing.T) {
 	workdir := t.TempDir()
 	configDir := filepath.Join(t.TempDir(), "cfg")
 	bin := filepath.Join(t.TempDir(), "beet-e2e")
+	cliBinDir := t.TempDir()
 
 	build := exec.Command("go", "build", "-o", bin, ".")
 	build.Dir = root
@@ -24,11 +25,17 @@ func TestE2EGenerateCreatesOutputs(t *testing.T) {
 		t.Fatalf("go build failed: %v\n%s", err, string(out))
 	}
 
+	cliScript := filepath.Join(cliBinDir, "codex")
+	if err := os.WriteFile(cliScript, []byte("#!/bin/sh\nexit 0\n"), 0o755); err != nil {
+		t.Fatalf("write fake codex: %v", err)
+	}
+
 	cmd := exec.Command(bin, "ship", "it")
 	cmd.Dir = workdir
 	cmd.Env = append(os.Environ(),
 		"BEET_CONFIG_DIR="+configDir,
 		"HOME="+workdir,
+		"PATH="+cliBinDir+string(os.PathListSeparator)+os.Getenv("PATH"),
 	)
 
 	if out, err := cmd.CombinedOutput(); err != nil {
