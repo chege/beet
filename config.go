@@ -26,6 +26,11 @@ var defaultTemplates = map[string]string{
 	"prd.md":        "# Product Requirements\n\n{{intent}}\n\n## Guidelines\n{{guidelines}}\n",
 	"srs.md":        "# Software Requirements Specification\n\n{{intent}}\n\n## Guidelines\n{{guidelines}}\n",
 	"guidelines.md": "# Guidelines\n\n{{guidelines}}\n",
+	"intent.md":     "# Intent\n\n{{intent}}\n",
+	"design.md":     "# Design\n\n{{intent}}\n\n## Notes\n{{guidelines}}\n",
+	"rules.md":      "# Rules\n\n{{guidelines}}\n",
+	"plan.md":       "# Plan\n\n- [ ] {{intent}}\n",
+	"progress.md":   "# Progress\n\n- [ ] Not started\n",
 }
 
 var defaultGuidelines = map[string]string{
@@ -49,6 +54,21 @@ var defaultPacks = map[string]string{
 		"    template: srs.md\n" +
 		"  - file: GUIDELINES.md\n" +
 		"    template: guidelines.md\n",
+	"comprehensive.yaml": "outputs:\n" +
+		"  - file: WORK_PROMPT.md\n" +
+		"    template: default.md\n" +
+		"  - file: agents.md\n" +
+		"    template: agents.md\n" +
+		"  - file: INTENT.md\n" +
+		"    template: intent.md\n" +
+		"  - file: DESIGN.md\n" +
+		"    template: design.md\n" +
+		"  - file: RULES.md\n" +
+		"    template: rules.md\n" +
+		"  - file: PLAN.md\n" +
+		"    template: plan.md\n" +
+		"  - file: PROGRESS.md\n" +
+		"    template: progress.md\n",
 }
 
 func resolveConfigDir() (string, error) {

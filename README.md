@@ -54,8 +54,8 @@ Flags:
 
 CLI shaping: execution defaults to on; the detected CLI (Codex first, then Copilot) receives the full prompt (internal instruction + template + guidelines + intent) on stdin and its output is written to files. If no CLI is found and `--exec` is true, generation fails.
 
-Packs and multi-output: pack files define outputs and templates; all outputs are rendered per pack. The default pack emits WORK_PROMPT.md and agents.md; extended packs (e.g., PRD/SRS/guidelines) can be added to `~/.beet/packs`.
-Built-in packs: `default` (WORK_PROMPT.md, agents.md) and `extended` (adds PRD.md, SRS.md, GUIDELINES.md).
+Packs and multi-output: pack files define outputs and templates; all outputs are rendered per pack. The default pack emits WORK_PROMPT.md and agents.md; extended packs (e.g., PRD/SRS/guidelines) and comprehensive packs (AGENTS/INTENT/DESIGN/RULES/PLAN/PROGRESS) can be added to `~/.beet/packs`.
+Built-in packs: `default` (WORK_PROMPT.md, agents.md), `extended` (adds PRD.md, SRS.md, GUIDELINES.md), and `comprehensive` (adds INTENT.md, DESIGN.md, RULES.md, PLAN.md, PROGRESS.md).
 
 ## 🧩 Template packs & placeholders (for custom templates)
 

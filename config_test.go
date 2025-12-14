@@ -149,6 +149,28 @@ func TestBootstrapDefaultsCreatesExtendedPack(t *testing.T) {
 	}
 }
 
+func TestBootstrapDefaultsCreatesComprehensivePack(t *testing.T) {
+	dir := filepath.Join(t.TempDir(), "cfg")
+	if err := ensureConfigStructure(dir); err != nil {
+		t.Fatalf("ensureConfigStructure returned error: %v", err)
+	}
+
+	if err := bootstrapDefaults(dir); err != nil {
+		t.Fatalf("bootstrapDefaults returned error: %v", err)
+	}
+
+	path := filepath.Join(dir, packsDirName, "comprehensive.yaml")
+	got, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read comprehensive pack: %v", err)
+	}
+
+	want := defaultPacks["comprehensive.yaml"]
+	if string(got) != want {
+		t.Fatalf("comprehensive pack content mismatch:\n got: %s\nwant: %s", string(got), want)
+	}
+}
+
 func TestListTemplatesSorted(t *testing.T) {
 	dir := filepath.Join(t.TempDir(), "cfg")
 	if err := ensureConfigStructure(dir); err != nil {
@@ -195,7 +217,7 @@ func TestListPacksSorted(t *testing.T) {
 		t.Fatalf("listPacks returned error: %v", err)
 	}
 
-	want := sortedCopy([]string{"custom.yaml", "default.yaml", "extended.yaml"})
+	want := sortedCopy([]string{"custom.yaml", "default.yaml", "extended.yaml", "comprehensive.yaml"})
 	if !reflect.DeepEqual(names, want) {
 		t.Fatalf("listPacks = %v, want %v", names, want)
 	}
