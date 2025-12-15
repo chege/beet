@@ -2,6 +2,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"flag"
 	"fmt"
@@ -9,8 +10,10 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"time"
 )
 
@@ -358,11 +361,22 @@ func handleGenerate(configDir string, args []string) error {
 	}
 
 	var cli detectedCLI
+	var execCtx context.Context
+	var cancelExec context.CancelFunc
 	if *execFlag {
 		cli, err = requireCLI()
 		if err != nil {
 			return err
 		}
+
+		baseCtx, baseCancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+		timeoutCtx, timeoutCancel := context.WithTimeout(baseCtx, cliTimeout())
+		execCtx = timeoutCtx
+		cancelExec = func() {
+			timeoutCancel()
+			baseCancel()
+		}
+		defer cancelExec()
 	}
 
 	for _, out := range p.Outputs {
@@ -387,7 +401,10 @@ func handleGenerate(configDir string, args []string) error {
 
 		content := prompt
 		if *execFlag {
-			content, err = runCLI(cli, prompt)
+			if execCtx == nil {
+				return fmt.Errorf("missing CLI context")
+			}
+			content, err = runCLI(execCtx, cli, prompt)
 			if err != nil {
 				return err
 			}
