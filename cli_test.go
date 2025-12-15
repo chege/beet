@@ -227,6 +227,36 @@ func TestHandleCompletionZsh(t *testing.T) {
 	}
 }
 
+func TestParseGlobalArgsVerboseFlag(t *testing.T) {
+	args, verbose := parseGlobalArgs([]string{"--verbose", "doctor"})
+	if !verbose {
+		t.Fatalf("verbose flag not recognized")
+	}
+	if len(args) != 1 || args[0] != "doctor" {
+		t.Fatalf("unexpected args: %v", args)
+	}
+}
+
+func TestParseGlobalArgsShortFlag(t *testing.T) {
+	args, verbose := parseGlobalArgs([]string{"pack", "-v", "list"})
+	if !verbose {
+		t.Fatalf("short verbose flag not recognized")
+	}
+	if len(args) != 2 || args[0] != "pack" || args[1] != "list" {
+		t.Fatalf("unexpected args: %v", args)
+	}
+}
+
+func TestParseGlobalArgsKeepsOtherFlags(t *testing.T) {
+	args, verbose := parseGlobalArgs([]string{"--verbose", "--help"})
+	if !verbose {
+		t.Fatalf("verbose flag not recognized")
+	}
+	if len(args) != 1 || args[0] != "--help" {
+		t.Fatalf("unexpected args: %v", args)
+	}
+}
+
 func TestHandleCompletionRejectsUnknownShell(t *testing.T) {
 	if err := handleCompletion([]string{"--shell", "fish"}); err == nil {
 		t.Fatalf("handleCompletion should error on unknown shell")

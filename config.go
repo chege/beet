@@ -344,5 +344,7 @@ func prepareConfig() (string, error) {
 		return "", err
 	}
 
+	logVerbose("prepared config directory %s", dir)
+
 	return dir, nil
 }

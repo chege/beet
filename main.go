@@ -142,6 +142,8 @@ func runCLI(ctx context.Context, cli detectedCLI, prompt string) (string, error)
 		ctx = context.Background()
 	}
 
+	logVerbose("running CLI %s (%s)", cli.name, cli.path)
+
 	cmd := exec.CommandContext(ctx, cli.path)
 	cmd.Stdin = strings.NewReader(prompt)
 	cmd.Stderr = os.Stderr
@@ -152,6 +154,8 @@ func runCLI(ctx context.Context, cli detectedCLI, prompt string) (string, error)
 	if err := cmd.Run(); err != nil {
 		return "", fmt.Errorf("%s exec failed: %w", cli.name, err)
 	}
+
+	logVerbose("CLI %s completed", cli.name)
 
 	return out.String(), nil
 }

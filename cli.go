@@ -103,18 +103,27 @@ _beet "$@"
 )
 
 func main() {
+	rawArgs := os.Args[1:]
+	args, verbose := parseGlobalArgs(rawArgs)
+	configureVerboseLogging(verbose)
+	if verbose {
+		logVerbose("verbose logging enabled")
+	}
+
 	configDir, err := prepareConfig()
 	if err != nil {
 		log.Fatalf("prepare config: %v", err)
 	}
+	logVerbose("using config dir %s", configDir)
 
-	args := os.Args[1:]
 	if len(args) == 0 {
 		if err := handleGenerate(configDir, args); err != nil {
 			log.Fatalf("generate prompt: %v", err)
 		}
 		return
 	}
+
+	logVerbose("command args %v", args)
 
 	switch args[0] {
 	case "templates":
@@ -350,6 +359,8 @@ func handleGenerate(configDir string, args []string) error {
 		packName = defaultPackName
 	}
 
+	logVerbose("generate params: pack=%s template=%q exec=%t dry-run=%t force-agents=%t", packName, tmplName, *execFlag, *dryRun, *forceAgents)
+
 	p, err := loadPack(configDir, packName)
 	if err != nil {
 		return err
@@ -369,8 +380,11 @@ func handleGenerate(configDir string, args []string) error {
 			return err
 		}
 
+		timeout := cliTimeout()
+		logVerbose("executing prompts with CLI %s (%s) timeout=%s", cli.name, cli.path, timeout)
+
 		baseCtx, baseCancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-		timeoutCtx, timeoutCancel := context.WithTimeout(baseCtx, cliTimeout())
+		timeoutCtx, timeoutCancel := context.WithTimeout(baseCtx, timeout)
 		execCtx = timeoutCtx
 		cancelExec = func() {
 			timeoutCancel()
@@ -394,6 +408,8 @@ func handleGenerate(configDir string, args []string) error {
 		label := strings.TrimSuffix(normalized, filepath.Ext(normalized))
 		prompt := buildWorkPrompt(label, templateContent, guidelines, intent)
 
+		logVerbose("rendering %s via template %s", out.File, label)
+
 		if *dryRun {
 			fmt.Printf("=== %s ===\n%s\n", out.File, prompt)
 			continue
@@ -413,6 +429,7 @@ func handleGenerate(configDir string, args []string) error {
 		if err := writeRenderedOutput(out.File, content, *forceAgents); err != nil {
 			return err
 		}
+		logVerbose("wrote %s (%d bytes)", out.File, len(content))
 	}
 
 	return nil
@@ -553,4 +570,19 @@ func defaultWaitForContent(path string) error {
 		}
 		time.Sleep(waitForContentInterval)
 	}
+}
+
+func parseGlobalArgs(args []string) ([]string, bool) {
+	clean := make([]string, 0, len(args))
+	verbose := false
+	for _, arg := range args {
+		switch arg {
+		case "--verbose", "-v":
+			verbose = true
+			continue
+		default:
+			clean = append(clean, arg)
+		}
+	}
+	return clean, verbose
 }

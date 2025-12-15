@@ -54,12 +54,17 @@ Flags:
 - `--dry-run` — render all outputs to stdout with labels
 - `--exec` (default true) — send rendered prompts to the detected CLI and write its shaped output
 - `--force-agents` — allow overwriting agents.md
+- `-v, --verbose` — enable verbose diagnostics (config bootstrap, pack/template selection, CLI detection, rendering, and CLI execution) written to stderr
 
 ## ⚙️ Environment
 
 - `BEET_CONFIG_DIR` — override the default `~/.beet` directory when bootstrapping templates, guidelines, and packs.
 - `BEET_CLI_PATH` — point beet at a specific CLI binary (useful for wrappers or alternative installs); `beet doctor` surfaces whether the override resolved.
 - `BEET_CLI_TIMEOUT` — change how long beet waits for the detected CLI before aborting (duration syntax, default `5m`).
+
+## 📝 Logging
+
+`beet` prints only fatal errors unless the verbose flag is enabled. Pass `-v` or `--verbose` to stream diagnostics to stderr covering configuration bootstrapping, pack/template discovery, CLI detection, prompt rendering, and CLI execution; your generated files remain untouched.
 
 CLI shaping: execution defaults to on; the detected CLI (Codex first, then Copilot, then Claude Code) receives the full prompt (internal instruction + template + guidelines + intent) on stdin and its output is written to files. If no CLI is found and `--exec` is true, generation fails.
 
