@@ -55,6 +55,12 @@ Flags:
 - `--exec` (default true) — send rendered prompts to the detected CLI and write its shaped output
 - `--force-agents` — allow overwriting agents.md
 
+## ⚙️ Environment
+
+- `BEET_CONFIG_DIR` — override the default `~/.beet` directory when bootstrapping templates, guidelines, and packs.
+- `BEET_CLI_PATH` — point beet at a specific CLI binary (useful for wrappers or alternative installs); `beet doctor` surfaces whether the override resolved.
+- `BEET_CLI_TIMEOUT` — change how long beet waits for the detected CLI before aborting (duration syntax, default `5m`).
+
 CLI shaping: execution defaults to on; the detected CLI (Codex first, then Copilot, then Claude Code) receives the full prompt (internal instruction + template + guidelines + intent) on stdin and its output is written to files. If no CLI is found and `--exec` is true, generation fails.
 
 Packs and multi-output: pack files define outputs and templates; all outputs are rendered per pack. The default pack emits WORK_PROMPT.md and agents.md; extended packs (e.g., PRD/SRS/guidelines) and comprehensive packs (AGENTS/INTENT/DESIGN/RULES/PLAN/PROGRESS) can be added to `~/.beet/packs`.
