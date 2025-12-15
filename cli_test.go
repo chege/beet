@@ -138,6 +138,45 @@ func TestIntentFromDefaultAppFallback(t *testing.T) {
 	}
 }
 
+func TestIntentFromEditorWaitsForContent(t *testing.T) {
+	script := filepath.Join(t.TempDir(), "editor.sh")
+	content := "#!/bin/sh\nexit 0\n"
+	if err := os.WriteFile(script, []byte(content), 0o755); err != nil {
+		t.Fatalf("write script: %v", err)
+	}
+	t.Setenv("EDITOR", script)
+
+	devNull, err := os.Open(os.DevNull)
+	if err != nil {
+		t.Fatalf("open devnull: %v", err)
+	}
+	defer devNull.Close()
+	origStdin := os.Stdin
+	os.Stdin = devNull
+	defer func() { os.Stdin = origStdin }()
+
+	origWait := waitForContentFn
+	waitCalled := false
+	waitForContentFn = func(path string) error {
+		waitCalled = true
+		return os.WriteFile(path, []byte("from wait"), 0o644)
+	}
+	t.Cleanup(func() {
+		waitForContentFn = origWait
+	})
+
+	intent, err := parseIntent(nil)
+	if err != nil {
+		t.Fatalf("parseIntent returned error: %v", err)
+	}
+	if intent != "from wait" {
+		t.Fatalf("parseIntent = %q, want from wait", intent)
+	}
+	if !waitCalled {
+		t.Fatalf("waitForContentFn not invoked")
+	}
+}
+
 func TestHandleCompletionBash(t *testing.T) {
 	r, w, err := os.Pipe()
 	if err != nil {

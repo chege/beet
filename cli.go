@@ -491,6 +491,10 @@ func intentFromEditor() (string, error) {
 		return "", fmt.Errorf("launch editor: %w", err)
 	}
 
+	if err := waitForContentFn(tmp.Name()); err != nil {
+		return "", fmt.Errorf("await editor content: %w", err)
+	}
+
 	b, err := os.ReadFile(tmp.Name())
 	if err != nil {
 		return "", fmt.Errorf("read editor output: %w", err)
