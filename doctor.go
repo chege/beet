@@ -5,12 +5,16 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"strings"
 )
 
 type detectedCLI struct {
 	name string
 	path string
 }
+
+const envCLIBinary = "BEET_CLI_PATH"
 
 var cliPriority = []string{"codex", "copilot", "claude"}
 
@@ -57,6 +61,16 @@ func runDoctor(w io.Writer) error {
 		}
 	}
 
+	if override, ok, err := detectCLIOverride(); err != nil {
+		if _, writeErr := fmt.Fprintf(w, "%s: %v\n", envCLIBinary, err); writeErr != nil {
+			return writeErr
+		}
+	} else if ok {
+		if _, writeErr := fmt.Fprintf(w, "%s override: %s at %s\n", envCLIBinary, override.name, override.path); writeErr != nil {
+			return writeErr
+		}
+	}
+
 	if len(found) == 0 {
 		if _, err := fmt.Fprintln(w, "No supported CLI detected. Install Codex CLI, Copilot CLI, or Claude Code CLI."); err != nil {
 			return err
@@ -85,9 +99,26 @@ func runDetectedCLI(promptPath string) error {
 }
 
 func requireCLI() (detectedCLI, error) {
+	if override, ok, err := detectCLIOverride(); err != nil {
+		return detectedCLI{}, err
+	} else if ok {
+		return override, nil
+	}
 	cli, ok := detectPreferredCLI()
 	if !ok {
 		return detectedCLI{}, fmt.Errorf("no supported CLI found; install Codex CLI, Copilot CLI, or Claude Code CLI")
 	}
 	return cli, nil
+}
+
+func detectCLIOverride() (detectedCLI, bool, error) {
+	raw := strings.TrimSpace(os.Getenv(envCLIBinary))
+	if raw == "" {
+		return detectedCLI{}, false, nil
+	}
+	path, err := exec.LookPath(raw)
+	if err != nil {
+		return detectedCLI{}, false, fmt.Errorf("%s lookup failed: %w", envCLIBinary, err)
+	}
+	return detectedCLI{name: filepath.Base(path), path: path}, true, nil
 }

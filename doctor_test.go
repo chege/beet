@@ -50,3 +50,31 @@ func TestRunDoctorReportsMissing(t *testing.T) {
 		t.Fatalf("doctor should warn when none found: %s", out)
 	}
 }
+
+func TestRequireCLIRespectsOverride(t *testing.T) {
+	binDir := t.TempDir()
+	override := filepath.Join(binDir, "custom-cli")
+	if err := os.WriteFile(override, []byte("#!/bin/sh\nexit 0\n"), 0o755); err != nil {
+		t.Fatalf("write override: %v", err)
+	}
+
+	t.Setenv(envCLIBinary, override)
+
+	cli, err := requireCLI()
+	if err != nil {
+		t.Fatalf("requireCLI error: %v", err)
+	}
+	if cli.path != override {
+		t.Fatalf("expected override path %s, got %s", override, cli.path)
+	}
+}
+
+func TestRequireCLIOverrideMissing(t *testing.T) {
+	t.Setenv(envCLIBinary, "/nonexistent/cli")
+
+	if _, err := requireCLI(); err == nil {
+		t.Fatalf("expected error when override missing")
+	} else if !strings.Contains(err.Error(), envCLIBinary) {
+		t.Fatalf("error should mention %s, got %v", envCLIBinary, err)
+	}
+}
