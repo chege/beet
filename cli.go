@@ -34,6 +34,71 @@ var (
 	waitForContentInterval = 200 * time.Millisecond
 )
 
+const (
+	bashCompletion = `_beet_completions() {
+  local cur prev
+  COMPREPLY=()
+  cur="${COMP_WORDS[COMP_CWORD]}"
+  prev="${COMP_WORDS[COMP_CWORD-1]}"
+  local commands="templates packs doctor pack template config completion"
+  local global_opts="--help --dry-run --exec --force-agents -t --template -p --pack"
+  case "$prev" in
+    pack)
+      COMPREPLY=( $(compgen -W "list init edit" -- "$cur") )
+      return 0
+      ;;
+    template)
+      COMPREPLY=( $(compgen -W "new" -- "$cur") )
+      return 0
+      ;;
+    config)
+      COMPREPLY=( $(compgen -W "restore" -- "$cur") )
+      return 0
+      ;;
+  esac
+  COMPREPLY=( $(compgen -W "${commands} ${global_opts}" -- "$cur") )
+}
+complete -F _beet_completions beet
+`
+	zshCompletion = `#compdef beet
+
+_beet_commands() {
+  _values 'commands' templates packs doctor pack template config completion
+}
+
+_beet() {
+  local state
+  _arguments \
+    '1: :->cmds' \
+    '*::arg:->args'
+
+  case $state in
+    cmds)
+      _beet_commands
+      ;;
+    args)
+      case $words[1] in
+        pack)
+          _values 'pack commands' list init edit
+          ;;
+        template)
+          _values 'template commands' new
+          ;;
+        config)
+          _values 'config commands' restore
+          ;;
+        *)
+          _values 'options' --help --dry-run --exec --force-agents -t --template -p --pack
+          ;;
+      esac
+      ;;
+  esac
+}
+
+_beet "$@"
+`
+)
+
 func main() {
 	configDir, err := prepareConfig()
 	if err != nil {
@@ -81,6 +146,10 @@ func main() {
 		if err := handleConfig(configDir, args[1:]); err != nil {
 			log.Fatalf("config: %v", err)
 		}
+	case "completion":
+		if err := handleCompletion(args[1:]); err != nil {
+			log.Fatalf("completion: %v", err)
+		}
 	default:
 		if err := handleGenerate(configDir, args); err != nil {
 			log.Fatalf("generate prompt: %v", err)
@@ -94,6 +163,31 @@ func handleConfig(configDir string, args []string) error {
 	}
 
 	return restoreDefaults(configDir)
+}
+
+func handleCompletion(args []string) error {
+	fs := flag.NewFlagSet("completion", flag.ContinueOnError)
+	fs.SetOutput(os.Stdout)
+	shell := fs.String("shell", "bash", "shell (bash|zsh)")
+	if err := fs.Parse(args); err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			return nil
+		}
+		return err
+	}
+
+	var script string
+	switch strings.ToLower(strings.TrimSpace(*shell)) {
+	case "bash":
+		script = bashCompletion
+	case "zsh":
+		script = zshCompletion
+	default:
+		return fmt.Errorf("unknown shell %q (supported: bash, zsh)", *shell)
+	}
+
+	fmt.Fprint(os.Stdout, script)
+	return nil
 }
 
 func handlePackCommand(configDir string, args []string) error {
@@ -216,7 +310,7 @@ func handleGenerate(configDir string, args []string) error {
 		fmt.Fprintln(fs.Output(), "Usage: beet [flags] [intent|file]")
 		fmt.Fprintln(fs.Output(), "\nFlags:")
 		fs.PrintDefaults()
-		fmt.Fprintln(fs.Output(), "\nCommands: beet templates | beet packs | beet doctor | beet config restore | beet pack [list|init|edit] | beet template new")
+		fmt.Fprintln(fs.Output(), "\nCommands: beet templates | beet packs | beet doctor | beet config restore | beet pack [list|init|edit] | beet template new | beet completion [--shell bash|zsh]")
 		fmt.Fprintln(fs.Output(), "Notes: packs are bootstrapped and selectable with -p/--pack (default, extended, comprehensive).")
 		fmt.Fprintln(fs.Output(), "       generation renders all outputs defined by the pack; -t/--template only overrides WORK_PROMPT.md in the default pack.")
 		fmt.Fprintln(fs.Output(), "       CLI execution defaults on (Codex preferred, then Copilot, then Claude Code). Disable with --exec=false.")

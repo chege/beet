@@ -138,6 +138,62 @@ func TestIntentFromDefaultAppFallback(t *testing.T) {
 	}
 }
 
+func TestHandleCompletionBash(t *testing.T) {
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("pipe: %v", err)
+	}
+	origStdout := os.Stdout
+	os.Stdout = w
+	if err := handleCompletion([]string{"--shell", "bash"}); err != nil {
+		t.Fatalf("handleCompletion bash: %v", err)
+	}
+	_ = w.Close()
+	os.Stdout = origStdout
+
+	data, err := io.ReadAll(r)
+	if err != nil {
+		t.Fatalf("read completion: %v", err)
+	}
+	out := string(data)
+	for _, expected := range []string{"complete -F _beet_completions beet", "--dry-run", "pack"} {
+		if !strings.Contains(out, expected) {
+			t.Fatalf("bash completion missing %q: %s", expected, out)
+		}
+	}
+}
+
+func TestHandleCompletionZsh(t *testing.T) {
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("pipe: %v", err)
+	}
+	origStdout := os.Stdout
+	os.Stdout = w
+	if err := handleCompletion([]string{"--shell", "zsh"}); err != nil {
+		t.Fatalf("handleCompletion zsh: %v", err)
+	}
+	_ = w.Close()
+	os.Stdout = origStdout
+
+	data, err := io.ReadAll(r)
+	if err != nil {
+		t.Fatalf("read completion: %v", err)
+	}
+	out := string(data)
+	for _, expected := range []string{"#compdef beet", "_values 'commands'"} {
+		if !strings.Contains(out, expected) {
+			t.Fatalf("zsh completion missing %q: %s", expected, out)
+		}
+	}
+}
+
+func TestHandleCompletionRejectsUnknownShell(t *testing.T) {
+	if err := handleCompletion([]string{"--shell", "fish"}); err == nil {
+		t.Fatalf("handleCompletion should error on unknown shell")
+	}
+}
+
 func TestDefaultWaitForContentAcceptsNonWhitespace(t *testing.T) {
 	origTimeout := waitForContentTimeout
 	origInterval := waitForContentInterval
