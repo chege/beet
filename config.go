@@ -59,7 +59,10 @@ func ensureConfigStructure(dir string) error {
 }
 
 func copyDefaults(dir string) error {
-	return fs.WalkDir(embeddedDefaults, "defaults", func(path string, d fs.DirEntry, err error) error {
+	var createdFiles []string
+	var createdDirs []string
+
+	err := fs.WalkDir(embeddedDefaults, "defaults", func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -74,37 +77,99 @@ func copyDefaults(dir string) error {
 		target := filepath.Join(dir, rel)
 
 		if d.IsDir() {
+			info, statErr := os.Stat(target)
+			if statErr == nil {
+				if !info.IsDir() {
+					return fmt.Errorf("%s exists and is not a directory", target)
+				}
+				return nil
+			}
+			if !os.IsNotExist(statErr) {
+				return fmt.Errorf("stat dir %s: %w", target, statErr)
+			}
 			if err := os.MkdirAll(target, 0o755); err != nil {
 				return fmt.Errorf("create dir %s: %w", target, err)
 			}
+			createdDirs = append(createdDirs, target)
 			return nil
 		}
 
-		data, err := embeddedDefaults.ReadFile(path)
-		if err != nil {
-			return fmt.Errorf("read default %s: %w", path, err)
+		if info, statErr := os.Stat(target); statErr == nil {
+			if info.IsDir() {
+				return fmt.Errorf("target %s exists as directory", target)
+			}
+			return nil
+		} else if !os.IsNotExist(statErr) {
+			return fmt.Errorf("check file %s: %w", target, statErr)
 		}
 
-		return writeIfMissing(target, string(data))
+		data, readErr := embeddedDefaults.ReadFile(path)
+		if readErr != nil {
+			return fmt.Errorf("read default %s: %w", path, readErr)
+		}
+
+		if err := writeFileAtomic(target, data); err != nil {
+			return fmt.Errorf("write default %s: %w", target, err)
+		}
+		createdFiles = append(createdFiles, target)
+		return nil
 	})
+
+	if err != nil {
+		cleanupDefaults(createdFiles, createdDirs)
+		return err
+	}
+	return nil
 }
 
 func bootstrapDefaults(dir string) error {
 	return copyDefaults(dir)
 }
 
-func writeIfMissing(path, content string) error {
-	if _, err := os.Stat(path); err == nil {
-		return nil
-	} else if !os.IsNotExist(err) {
-		return fmt.Errorf("check file %s: %w", path, err)
+func writeFileAtomic(path string, data []byte) error {
+	dir := filepath.Dir(path)
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return fmt.Errorf("ensure dir %s: %w", dir, err)
 	}
 
-	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
-		return fmt.Errorf("write default %s: %w", path, err)
+	tmp, err := os.CreateTemp(dir, "beet-default-*")
+	if err != nil {
+		return fmt.Errorf("create temp file: %w", err)
 	}
 
+	tmpPath := tmp.Name()
+	defer func() {
+		if tmpPath != "" {
+			_ = os.Remove(tmpPath)
+		}
+	}()
+
+	if _, err := tmp.Write(data); err != nil {
+		_ = tmp.Close()
+		return err
+	}
+	if err := tmp.Sync(); err != nil {
+		_ = tmp.Close()
+		return err
+	}
+	if err := tmp.Close(); err != nil {
+		return err
+	}
+
+	if err := os.Rename(tmpPath, path); err != nil {
+		return err
+	}
+	tmpPath = ""
 	return nil
+}
+
+func cleanupDefaults(files, dirs []string) {
+	for i := len(files) - 1; i >= 0; i-- {
+		_ = os.Remove(files[i])
+	}
+	for i := len(dirs) - 1; i >= 0; i-- {
+		_ = os.Remove(dirs[i])
+	}
 }
 
 func listTemplates(configDir string) ([]string, error) {

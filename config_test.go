@@ -7,6 +7,49 @@ import (
 	"testing"
 )
 
+func TestWriteFileAtomicCreatesNestedFile(t *testing.T) {
+	dir := filepath.Join(t.TempDir(), "cfg")
+
+	target := filepath.Join(dir, "nested", "output.md")
+	content := []byte("hello world")
+
+	if err := writeFileAtomic(target, content); err != nil {
+		t.Fatalf("writeFileAtomic error: %v", err)
+	}
+
+	got, err := os.ReadFile(target)
+	if err != nil {
+		t.Fatalf("read target file: %v", err)
+	}
+	if string(got) != string(content) {
+		t.Fatalf("target content = %q, want %q", string(got), string(content))
+	}
+}
+
+func TestCleanupDefaultsRemovesArtifacts(t *testing.T) {
+	dir := t.TempDir()
+	file := filepath.Join(dir, "keep", "file.txt")
+	if err := os.MkdirAll(filepath.Dir(file), 0o755); err != nil {
+		t.Fatalf("create dir: %v", err)
+	}
+	if err := os.WriteFile(file, []byte("data"), 0o644); err != nil {
+		t.Fatalf("write file: %v", err)
+	}
+	subdir := filepath.Join(dir, "tempdir")
+	if err := os.MkdirAll(subdir, 0o755); err != nil {
+		t.Fatalf("create subdir: %v", err)
+	}
+
+	cleanupDefaults([]string{file}, []string{subdir})
+
+	if _, err := os.Stat(file); !os.IsNotExist(err) {
+		t.Fatalf("file should be removed, stat err: %v", err)
+	}
+	if _, err := os.Stat(subdir); !os.IsNotExist(err) {
+		t.Fatalf("directory should be removed, stat err: %v", err)
+	}
+}
+
 func TestResolveConfigDirEnvOverride(t *testing.T) {
 	tmp := t.TempDir()
 	override := filepath.Join(tmp, "cfg")
