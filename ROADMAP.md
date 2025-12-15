@@ -12,15 +12,14 @@ to refine the intent into the templates.
   `--exec=false`.
 - Docs/help describe commands, packs, shaping, and flags.
 - Config preflight checks ensure templates/packs exist before generation.
+- DX helpers implemented: `beet pack list|init|edit` and `beet template new`.
 
 ## Known Gaps
 
 - Integration coverage for richer templates is minimal.
-- DX helpers: pack/template scaffolding commands are not implemented.
 
 ## Required Work
 
 1) Add integration tests for richer templates across packs.
-2) DX helpers: `beet pack init/list/edit`, `beet template new` to reduce friction.
 
-Last updated: 2025-12-14T20:55:30.435Z
+Last updated: 2025-12-15T08:50:21.708Z
