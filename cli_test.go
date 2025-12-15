@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 type browserFake func(string) error
@@ -116,16 +117,16 @@ func TestParseIntentFromEditor(t *testing.T) {
 
 func TestIntentFromDefaultAppFallback(t *testing.T) {
 	origOpen := defaultBrowser
-	origWait := waitForEdit
+	origWait := waitForContentFn
 	t.Cleanup(func() {
 		defaultBrowser = origOpen
-		waitForEdit = origWait
+		waitForContentFn = origWait
 	})
 
 	defaultBrowser = browserFake(func(path string) error {
 		return os.WriteFile(path, []byte("from default app"), 0o644)
 	})
-	waitForEdit = func(string) error { return nil }
+	waitForContentFn = func(string) error { return nil }
 	t.Setenv("EDITOR", "")
 
 	intent, err := intentFromEditor()
@@ -134,6 +135,51 @@ func TestIntentFromDefaultAppFallback(t *testing.T) {
 	}
 	if intent != "from default app" {
 		t.Fatalf("intentFromEditor = %q, want from default app", intent)
+	}
+}
+
+func TestDefaultWaitForContentAcceptsNonWhitespace(t *testing.T) {
+	origTimeout := waitForContentTimeout
+	origInterval := waitForContentInterval
+	waitForContentTimeout = 500 * time.Millisecond
+	waitForContentInterval = 5 * time.Millisecond
+	defer func() {
+		waitForContentTimeout = origTimeout
+		waitForContentInterval = origInterval
+	}()
+
+	tmpFile := filepath.Join(t.TempDir(), "intent.md")
+	if err := os.WriteFile(tmpFile, []byte(""), 0o644); err != nil {
+		t.Fatalf("write temp file: %v", err)
+	}
+
+	go func() {
+		time.Sleep(10 * time.Millisecond)
+		_ = os.WriteFile(tmpFile, []byte("content"), 0o644)
+	}()
+
+	if err := defaultWaitForContent(tmpFile); err != nil {
+		t.Fatalf("defaultWaitForContent returned error: %v", err)
+	}
+}
+
+func TestDefaultWaitForContentRejectsWhitespace(t *testing.T) {
+	origTimeout := waitForContentTimeout
+	origInterval := waitForContentInterval
+	waitForContentTimeout = 50 * time.Millisecond
+	waitForContentInterval = 5 * time.Millisecond
+	defer func() {
+		waitForContentTimeout = origTimeout
+		waitForContentInterval = origInterval
+	}()
+
+	tmpFile := filepath.Join(t.TempDir(), "intent.md")
+	if err := os.WriteFile(tmpFile, []byte("   \n\t"), 0o644); err != nil {
+		t.Fatalf("write temp file: %v", err)
+	}
+
+	if err := defaultWaitForContent(tmpFile); err == nil {
+		t.Fatalf("defaultWaitForContent should error on whitespace-only content")
 	}
 }
 

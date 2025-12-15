@@ -11,6 +11,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 import "github.com/pkg/browser"
@@ -26,16 +27,12 @@ func (pkgBrowser) OpenFile(path string) error {
 }
 
 var defaultBrowser browserOpener = pkgBrowser{}
-var waitForEdit = func(path string) error {
-	if _, err := fmt.Fprintf(os.Stdout, "Edit intent in %s, then press Enter to continue: ", path); err != nil {
-		return err
-	}
-	_, err := fmt.Fscanln(os.Stdin)
-	if err == io.EOF {
-		return nil
-	}
-	return err
-}
+var waitForContentFn = defaultWaitForContent
+
+var (
+	waitForContentTimeout  = 5 * time.Minute
+	waitForContentInterval = 200 * time.Millisecond
+)
 
 func main() {
 	configDir, err := prepareConfig()
@@ -206,7 +203,7 @@ func openForEdit(path string) error {
 	if err := defaultBrowser.OpenFile(path); err != nil {
 		return fmt.Errorf("open default app: %w", err)
 	}
-	if err := waitForEdit(path); err != nil {
+	if err := waitForContentFn(path); err != nil {
 		return fmt.Errorf("await default edit: %w", err)
 	}
 	return nil
@@ -412,7 +409,7 @@ func intentFromDefaultApp() (string, error) {
 		return "", fmt.Errorf("open default app: %w", err)
 	}
 
-	if err := waitForEdit(tmp.Name()); err != nil {
+	if err := waitForContentFn(tmp.Name()); err != nil {
 		return "", fmt.Errorf("await default edit: %w", err)
 	}
 
@@ -427,4 +424,18 @@ func intentFromDefaultApp() (string, error) {
 	}
 
 	return intent, nil
+}
+
+func defaultWaitForContent(path string) error {
+	deadline := time.Now().Add(waitForContentTimeout)
+	for {
+		data, err := os.ReadFile(path)
+		if err == nil && strings.TrimSpace(string(data)) != "" {
+			return nil
+		}
+		if time.Now().After(deadline) {
+			return fmt.Errorf("no content written to %s", path)
+		}
+		time.Sleep(waitForContentInterval)
+	}
 }
