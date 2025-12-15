@@ -8,6 +8,8 @@ import (
 	"testing"
 )
 
+const guidelineSnippet = "Be clear. Be concise."
+
 func TestE2EGenerateCreatesOutputs(t *testing.T) {
 	root, err := os.Getwd()
 	if err != nil {
@@ -98,9 +100,40 @@ func TestE2EGenerateExtendedPack(t *testing.T) {
 		t.Fatalf("beet execution failed: %v\n%s", err, string(out))
 	}
 
-	for _, name := range []string{"WORK_PROMPT.md", "agents.md", "PRD.md", "SRS.md", "GUIDELINES.md"} {
-		if _, err := os.Stat(filepath.Join(workdir, name)); err != nil {
-			t.Fatalf("%s not created: %v", name, err)
+	expected := map[string]struct {
+		template         string
+		expectIntent     bool
+		expectGuidelines bool
+		extra            string
+	}{
+		"WORK_PROMPT.md": {template: "default", expectIntent: true},
+		"agents.md":      {template: "agents", expectGuidelines: true},
+		"PRD.md":         {template: "prd", expectIntent: true, expectGuidelines: true, extra: "Product Requirements"},
+		"SRS.md":         {template: "srs", expectIntent: true, expectGuidelines: true, extra: "Software Requirements Specification"},
+		"GUIDELINES.md":  {template: "guidelines", expectGuidelines: true, extra: "Guidelines"},
+	}
+
+	for name, exp := range expected {
+		path := filepath.Join(workdir, name)
+		data, err := os.ReadFile(path)
+		if err != nil {
+			t.Fatalf("read %s: %v", name, err)
+		}
+		content := string(data)
+		if !strings.Contains(content, "Internal instruction") {
+			t.Fatalf("%s missing internal instruction", name)
+		}
+		if !strings.Contains(content, "Template: "+exp.template) {
+			t.Fatalf("%s missing template label %q", name, exp.template)
+		}
+		if exp.expectIntent && !strings.Contains(content, "ship it") {
+			t.Fatalf("%s missing intent content", name)
+		}
+		if exp.expectGuidelines && !strings.Contains(content, guidelineSnippet) {
+			t.Fatalf("%s missing guidelines content", name)
+		}
+		if exp.extra != "" && !strings.Contains(content, exp.extra) {
+			t.Fatalf("%s missing template text %q", name, exp.extra)
 		}
 	}
 }
@@ -139,8 +172,22 @@ func TestE2EGenerateComprehensivePack(t *testing.T) {
 		t.Fatalf("beet execution failed: %v\n%s", err, string(out))
 	}
 
-	files := []string{"WORK_PROMPT.md", "agents.md", "INTENT.md", "DESIGN.md", "RULES.md", "PLAN.md", "PROGRESS.md"}
-	for _, name := range files {
+	expected := map[string]struct {
+		template         string
+		expectIntent     bool
+		expectGuidelines bool
+		extra            string
+	}{
+		"WORK_PROMPT.md": {template: "default", expectIntent: true},
+		"agents.md":      {template: "agents", expectGuidelines: true},
+		"INTENT.md":      {template: "intent", expectIntent: true, extra: "Intent"},
+		"DESIGN.md":      {template: "design", expectIntent: true, expectGuidelines: true, extra: "Notes"},
+		"RULES.md":       {template: "rules", expectGuidelines: true, extra: "Rules"},
+		"PLAN.md":        {template: "plan", expectIntent: true, extra: "[ ]"},
+		"PROGRESS.md":    {template: "progress", extra: "Not started"},
+	}
+
+	for name, exp := range expected {
 		path := filepath.Join(workdir, name)
 		data, err := os.ReadFile(path)
 		if err != nil {
@@ -150,11 +197,17 @@ func TestE2EGenerateComprehensivePack(t *testing.T) {
 		if !strings.Contains(content, "Internal instruction") {
 			t.Fatalf("%s missing internal instruction", name)
 		}
-		switch name {
-		case "WORK_PROMPT.md", "INTENT.md", "DESIGN.md", "PLAN.md":
-			if !strings.Contains(content, "ship it") {
-				t.Fatalf("%s missing intent", name)
-			}
+		if !strings.Contains(content, "Template: "+exp.template) {
+			t.Fatalf("%s missing template label %q", name, exp.template)
+		}
+		if exp.expectIntent && !strings.Contains(content, "ship it") {
+			t.Fatalf("%s missing intent content", name)
+		}
+		if exp.expectGuidelines && !strings.Contains(content, guidelineSnippet) {
+			t.Fatalf("%s missing guidelines content", name)
+		}
+		if exp.extra != "" && !strings.Contains(content, exp.extra) {
+			t.Fatalf("%s missing template text %q", name, exp.extra)
 		}
 	}
 }

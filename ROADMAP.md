@@ -13,13 +13,14 @@ to refine the intent into the templates.
 - Docs/help describe commands, packs, shaping, and flags.
 - Config preflight checks ensure templates/packs exist before generation.
 - DX helpers implemented: `beet pack list|init|edit` and `beet template new`.
+- Integration tests cover default, extended, and comprehensive pack outputs.
 
 ## Known Gaps
 
-- Integration coverage for richer templates is minimal.
+- None currently.
 
 ## Required Work
 
-1) Add integration tests for richer templates across packs.
+None currently.
 
-Last updated: 2025-12-15T08:50:21.708Z
+Last updated: 2025-12-15T08:52:37.143Z
