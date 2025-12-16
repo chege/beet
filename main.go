@@ -1,22 +1,15 @@
 package main
 
 import (
-	"bytes"
-	"context"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
-	"time"
 )
 
 const internalInstruction = "Internal instruction: clarify, rephrase, infer reasonable gaps, adhere to the template, and output only the final instruction text."
 const workPromptFilename = "WORK_PROMPT.md"
 const agentsFilename = "agents.md"
-const cliTimeoutEnv = "BEET_CLI_TIMEOUT"
-const defaultCLITimeout = 5 * time.Minute
-
 type guideline struct {
 	name    string
 	content string
@@ -135,36 +128,4 @@ func writeRenderedOutput(path string, content string, forceAgents bool) error {
 		return fmt.Errorf("write %s: %w", path, err)
 	}
 	return nil
-}
-
-func runCLI(ctx context.Context, cli detectedCLI, prompt string) (string, error) {
-	if ctx == nil {
-		ctx = context.Background()
-	}
-
-	logVerbose("running CLI %s (%s)", cli.name, cli.path)
-
-	cmd := exec.CommandContext(ctx, cli.path)
-	cmd.Stdin = strings.NewReader(prompt)
-	cmd.Stderr = os.Stderr
-
-	var out bytes.Buffer
-	cmd.Stdout = &out
-
-	if err := cmd.Run(); err != nil {
-		return "", fmt.Errorf("%s exec failed: %w", cli.name, err)
-	}
-
-	logVerbose("CLI %s completed", cli.name)
-
-	return out.String(), nil
-}
-
-func cliTimeout() time.Duration {
-	if raw := strings.TrimSpace(os.Getenv(cliTimeoutEnv)); raw != "" {
-		if duration, err := time.ParseDuration(raw); err == nil && duration > 0 {
-			return duration
-		}
-	}
-	return defaultCLITimeout
 }

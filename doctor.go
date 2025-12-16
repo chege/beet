@@ -89,24 +89,6 @@ func runDoctor(w io.Writer) error {
 	return nil
 }
 
-func runDetectedCLI(promptPath string) error {
-	cli, ok := detectPreferredCLI()
-	if !ok {
-		return fmt.Errorf("no supported CLI found; install Codex CLI, Copilot CLI, or Claude Code CLI")
-	}
-
-	cmd := exec.Command(cli.path, promptPath)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	cmd.Stdin = os.Stdin
-
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("%s exec failed: %w", cli.name, err)
-	}
-
-	return nil
-}
-
 func requireCLI() (detectedCLI, error) {
 	if override, ok, err := detectCLIOverride(); err != nil {
 		return detectedCLI{}, err

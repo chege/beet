@@ -108,9 +108,8 @@ We adopt Proposal 2 (Comprehensive Separation):
 - Automatic config bootstrap
 - Overwrite safety for `agents.md`
 - Template discovery
-- CLI detection (`doctor`)
-- Dry‑run mode
-- Optional execution of detected LLM CLI
+- CLI detection (`doctor`) for transparency
+- Dry-run mode
 
 ---
 
@@ -213,14 +212,14 @@ BEET_CONFIG_DIR
 
 ---
 
-#### FR‑7 CLI Detection
+#### FR-7 CLI Detection
 
 - Detect available CLIs in priority order:
   1. Codex CLI
   2. Copilot CLI
   3. Claude Code CLI
 - Provide transparency via `beet doctor`
-- Fail clearly if `--exec` is requested and none are found
+- Report the detected/available CLIs even though prompt generation no longer depends on them
 
 ---
 
@@ -239,7 +238,6 @@ beet doctor
 
 - `-t, --template <name>`
 - `--dry-run`
-- `--exec`
 - `--force-agents`
 
 ---

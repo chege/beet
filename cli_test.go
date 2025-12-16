@@ -34,7 +34,7 @@ func TestHandleGenerateCreatesWorkPrompt(t *testing.T) {
 		t.Fatalf("chdir: %v", err)
 	}
 
-	if err := handleGenerate(configDir, []string{"-t", "default", "--exec=false", "ship", "it"}); err != nil {
+	if err := handleGenerate(configDir, []string{"-t", "default", "ship", "it"}); err != nil {
 		t.Fatalf("handleGenerate returned error: %v", err)
 	}
 
@@ -150,7 +150,7 @@ func TestIntentFromEditorWaitsForContent(t *testing.T) {
 	if err != nil {
 		t.Fatalf("open devnull: %v", err)
 	}
-	defer devNull.Close()
+	defer func() { _ = devNull.Close() }()
 	origStdin := os.Stdin
 	os.Stdin = devNull
 	defer func() { os.Stdin = origStdin }()
@@ -396,51 +396,6 @@ func TestHandleGenerateDryRun(t *testing.T) {
 	}
 }
 
-func TestHandleGenerateExecRunsCLI(t *testing.T) {
-	configDir := filepath.Join(t.TempDir(), "cfg")
-	if err := ensureConfigStructure(configDir); err != nil {
-		t.Fatalf("ensureConfigStructure: %v", err)
-	}
-	if err := bootstrapDefaults(configDir); err != nil {
-		t.Fatalf("bootstrapDefaults: %v", err)
-	}
-
-	binDir := t.TempDir()
-	logFile := filepath.Join(t.TempDir(), "exec.log")
-	script := filepath.Join(binDir, "codex")
-	content := "#!/bin/sh\n/bin/cat >> \"$PF_EXEC_LOG\"\n"
-	if err := os.WriteFile(script, []byte(content), 0o755); err != nil {
-		t.Fatalf("write script: %v", err)
-	}
-	t.Setenv("PATH", binDir)
-	t.Setenv("PF_EXEC_LOG", logFile)
-
-	workdir := t.TempDir()
-	origWD, err := os.Getwd()
-	if err != nil {
-		t.Fatalf("getwd: %v", err)
-	}
-	defer func() {
-		_ = os.Chdir(origWD)
-	}()
-	if err := os.Chdir(workdir); err != nil {
-		t.Fatalf("chdir: %v", err)
-	}
-
-	if err := handleGenerate(configDir, []string{"--exec", "do", "it"}); err != nil {
-		t.Fatalf("handleGenerate returned error: %v", err)
-	}
-
-	data, err := os.ReadFile(logFile)
-	if err != nil {
-		t.Fatalf("read exec log: %v", err)
-	}
-	contentStr := strings.TrimSpace(string(data))
-	if !strings.Contains(contentStr, "Internal instruction") || !strings.Contains(contentStr, "do it") {
-		t.Fatalf("exec log missing prompt content: %s", contentStr)
-	}
-}
-
 func TestHandleGenerateRespectsPackOutputs(t *testing.T) {
 	configDir := filepath.Join(t.TempDir(), "cfg")
 	if err := ensureConfigStructure(configDir); err != nil {
@@ -468,7 +423,7 @@ func TestHandleGenerateRespectsPackOutputs(t *testing.T) {
 		t.Fatalf("chdir: %v", err)
 	}
 
-	if err := handleGenerate(configDir, []string{"--pack", "custom", "--exec=false", "ship"}); err != nil {
+	if err := handleGenerate(configDir, []string{"--pack", "custom", "ship"}); err != nil {
 		t.Fatalf("handleGenerate returned error: %v", err)
 	}
 
@@ -504,7 +459,7 @@ func TestHandleGenerateExtendedPack(t *testing.T) {
 		t.Fatalf("chdir: %v", err)
 	}
 
-	if err := handleGenerate(configDir, []string{"--pack", "extended", "--exec=false", "plan release"}); err != nil {
+	if err := handleGenerate(configDir, []string{"--pack", "extended", "plan release"}); err != nil {
 		t.Fatalf("handleGenerate returned error: %v", err)
 	}
 
@@ -558,7 +513,7 @@ func TestHandleGenerateUsesEditorWhenNoArgs(t *testing.T) {
 	os.Stdin = devNull
 	defer func() { os.Stdin = origStdin }()
 
-	if err := handleGenerate(configDir, []string{"--exec=false"}); err != nil {
+	if err := handleGenerate(configDir, []string{}); err != nil {
 		t.Fatalf("handleGenerate returned error: %v", err)
 	}
 

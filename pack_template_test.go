@@ -69,7 +69,7 @@ func TestHandlePackInitAndEdit(t *testing.T) {
 	if err != nil {
 		t.Fatalf("open devnull: %v", err)
 	}
-	defer devNull.Close()
+	defer func() { _ = devNull.Close() }()
 	origStdin := os.Stdin
 	os.Stdin = devNull
 	defer func() { os.Stdin = origStdin }()

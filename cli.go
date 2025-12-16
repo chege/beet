@@ -2,7 +2,6 @@
 package main
 
 import (
-	"context"
 	"errors"
 	"flag"
 	"fmt"
@@ -10,10 +9,8 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"os/signal"
 	"path/filepath"
 	"strings"
-	"syscall"
 	"time"
 )
 
@@ -44,7 +41,7 @@ const (
   cur="${COMP_WORDS[COMP_CWORD]}"
   prev="${COMP_WORDS[COMP_CWORD-1]}"
   local commands="templates packs doctor pack template config completion"
-  local global_opts="--help --dry-run --exec --force-agents -t --template -p --pack"
+  local global_opts="--help --dry-run --force-agents -t --template -p --pack"
   case "$prev" in
     pack)
       COMPREPLY=( $(compgen -W "list init edit" -- "$cur") )
@@ -91,7 +88,7 @@ _beet() {
           _values 'config commands' restore
           ;;
         *)
-          _values 'options' --help --dry-run --exec --force-agents -t --template -p --pack
+          _values 'options' --help --dry-run --force-agents -t --template -p --pack
           ;;
       esac
       ;;
@@ -198,7 +195,9 @@ func handleCompletion(args []string) error {
 		return fmt.Errorf("unknown shell %q (supported: bash, zsh)", *shell)
 	}
 
-	fmt.Fprint(os.Stdout, script)
+	if _, err := fmt.Fprint(os.Stdout, script); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -319,13 +318,12 @@ func handleGenerate(configDir string, args []string) error {
 	fs := flag.NewFlagSet("beet", flag.ContinueOnError)
 	fs.SetOutput(os.Stdout)
 	fs.Usage = func() {
-		fmt.Fprintln(fs.Output(), "Usage: beet [flags] [intent|file]")
-		fmt.Fprintln(fs.Output(), "\nFlags:")
+		usagePrintln(fs.Output(), "Usage: beet [flags] [intent|file]")
+		usagePrintln(fs.Output(), "\nFlags:")
 		fs.PrintDefaults()
-		fmt.Fprintln(fs.Output(), "\nCommands: beet templates | beet packs | beet doctor | beet config restore | beet pack [list|init|edit] | beet template new | beet completion [--shell bash|zsh]")
-		fmt.Fprintln(fs.Output(), "Notes: packs are bootstrapped and selectable with -p/--pack (default, extended, comprehensive).")
-		fmt.Fprintln(fs.Output(), "       generation renders all outputs defined by the pack; -t/--template only overrides WORK_PROMPT.md in the default pack.")
-		fmt.Fprintln(fs.Output(), "       CLI execution defaults on (Codex preferred, then Copilot, then Claude Code). Disable with --exec=false.")
+		usagePrintln(fs.Output(), "\nCommands: beet templates | beet packs | beet doctor | beet config restore | beet pack [list|init|edit] | beet template new | beet completion [--shell bash|zsh]")
+		usagePrintln(fs.Output(), "Notes: packs are bootstrapped and selectable with -p/--pack (default, extended, comprehensive).")
+		usagePrintln(fs.Output(), "       generation renders all outputs defined by the pack; -t/--template only overrides WORK_PROMPT.md in the default pack.")
 	}
 
 	template := fs.String("t", "", "template name")
@@ -334,7 +332,6 @@ func handleGenerate(configDir string, args []string) error {
 	packLong := fs.String("pack", "", "pack name")
 	dryRun := fs.Bool("dry-run", false, "render without writing files")
 	forceAgents := fs.Bool("force-agents", false, "overwrite agents.md")
-	execFlag := fs.Bool("exec", true, "execute detected CLI with WORK_PROMPT.md")
 
 	if err := fs.Parse(args); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
@@ -359,7 +356,7 @@ func handleGenerate(configDir string, args []string) error {
 		packName = defaultPackName
 	}
 
-	logVerbose("generate params: pack=%s template=%q exec=%t dry-run=%t force-agents=%t", packName, tmplName, *execFlag, *dryRun, *forceAgents)
+	logVerbose("generate params: pack=%s template=%q dry-run=%t force-agents=%t", packName, tmplName, *dryRun, *forceAgents)
 
 	p, err := loadPack(configDir, packName)
 	if err != nil {
@@ -369,28 +366,6 @@ func handleGenerate(configDir string, args []string) error {
 	guidelines, err := loadGuidelines(configDir)
 	if err != nil {
 		return err
-	}
-
-	var cli detectedCLI
-	var execCtx context.Context
-	var cancelExec context.CancelFunc
-	if *execFlag {
-		cli, err = requireCLI()
-		if err != nil {
-			return err
-		}
-
-		timeout := cliTimeout()
-		logVerbose("executing prompts with CLI %s (%s) timeout=%s", cli.name, cli.path, timeout)
-
-		baseCtx, baseCancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-		timeoutCtx, timeoutCancel := context.WithTimeout(baseCtx, timeout)
-		execCtx = timeoutCtx
-		cancelExec = func() {
-			timeoutCancel()
-			baseCancel()
-		}
-		defer cancelExec()
 	}
 
 	for _, out := range p.Outputs {
@@ -415,24 +390,19 @@ func handleGenerate(configDir string, args []string) error {
 			continue
 		}
 
-		content := prompt
-		if *execFlag {
-			if execCtx == nil {
-				return fmt.Errorf("missing CLI context")
-			}
-			content, err = runCLI(execCtx, cli, prompt)
-			if err != nil {
-				return err
-			}
-		}
-
-		if err := writeRenderedOutput(out.File, content, *forceAgents); err != nil {
+		if err := writeRenderedOutput(out.File, prompt, *forceAgents); err != nil {
 			return err
 		}
-		logVerbose("wrote %s (%d bytes)", out.File, len(content))
+		logVerbose("wrote %s (%d bytes)", out.File, len(prompt))
 	}
 
 	return nil
+}
+
+func usagePrintln(w io.Writer, line string) {
+	if _, err := fmt.Fprintln(w, line); err != nil {
+		logVerbose("usage output failed: %v", err)
+	}
 }
 
 func parseIntent(remaining []string) (string, error) {
