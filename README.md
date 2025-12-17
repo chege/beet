@@ -65,14 +65,11 @@ Flags:
 
 `beet` prints only fatal errors unless the verbose flag is enabled. Pass `-v` or `--verbose` to stream diagnostics to stderr covering configuration bootstrapping, pack/template discovery, and prompt rendering; your generated files remain untouched.
 
-## 🧠 Local LLM backend
-
-`beet` now bundles a lightweight local LLM backend under `~/.beet/local-llm`. On first use it copies the stub `runner.sh` and placeholder `model.gguf` from the bundled defaults and runs the stub after rendering each prompt so the generated file reflects the backend output. Swap `runner.sh` for llama.cpp, ggml, or any other single-shot tool and replace `model.gguf` with a real instruction model to fully satisfy the roadmap requirement without touching the CLI arguments.
-
 Packs and multi-output: pack files define outputs and templates; all outputs are rendered per pack. The default pack emits WORK_PROMPT.md and agents.md; extended packs (e.g., PRD/SRS/guidelines) and comprehensive packs (AGENTS/INTENT/DESIGN/RULES/PLAN/PROGRESS) can be added to `~/.beet/packs`.
 Built-in packs: `default` (WORK_PROMPT.md, agents.md), `extended` (adds PRD.md, SRS.md, GUIDELINES.md), and `comprehensive` (adds INTENT.md, DESIGN.md, RULES.md, PLAN.md, PROGRESS.md).
 
 Defaults: bundled templates, guidelines, and pack files live under `defaults/` in the repo. On first run Beet copies these into your config directory (`~/.beet` by default) without overwriting existing files; run `beet config restore` to re-copy any missing defaults later.
+Beet bootstraps only these text-based defaults; it does not install or manage local model/runner assets.
 
 ## 🧩 Template packs & placeholders (for custom templates)
 

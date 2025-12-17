@@ -15,6 +15,11 @@ coverage.*
 # Local builds
 beet
 
+# Local Go caches (sandbox-friendly)
+.gocache/
+.gomodcache/
+.gopath/
+
 # Editor and OS files
 .DS_Store
 .idea/

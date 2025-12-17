@@ -2,7 +2,6 @@
 package main
 
 import (
-	"context"
 	"errors"
 	"flag"
 	"fmt"
@@ -359,9 +358,6 @@ func handleGenerate(configDir string, args []string) error {
 
 	logVerbose("generate params: pack=%s template=%q dry-run=%t force-agents=%t", packName, tmplName, *dryRun, *forceAgents)
 
-	backend := newLocalLLMBackend(configDir)
-	promptCtx := context.Background()
-
 	p, err := loadPack(configDir, packName)
 	if err != nil {
 		return err
@@ -394,14 +390,10 @@ func handleGenerate(configDir string, args []string) error {
 			continue
 		}
 
-		content, err := backend.run(promptCtx, prompt)
-		if err != nil {
+		if err := writeRenderedOutput(out.File, prompt, *forceAgents); err != nil {
 			return err
 		}
-		if err := writeRenderedOutput(out.File, content, *forceAgents); err != nil {
-			return err
-		}
-		logVerbose("wrote %s (%d bytes)", out.File, len(content))
+		logVerbose("wrote %s (%d bytes)", out.File, len(prompt))
 	}
 
 	return nil

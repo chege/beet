@@ -21,5 +21,5 @@ WORK_PROMPT.md, agents.md, PRD, SRS) driven by configurable template packs and r
 
 1. **Local LLM execution backend**
    - Replace Codex/Copilot CLI invocation with a built-in local LLM runner.
-   - On first use, automatically download and cache a default instruction model (e.g. Mistral 7B Instruct GGUF) and a minimal runner (llama.cpp) under `~/.beet/`.
+   - On first use, automatically download and cache a default instruction model (e.g. Mistral 7B Instruct GGUF) and a minimal runner under `~/.beet/`.
    - Invoke the local runner in single-shot mode (stdin → stdout, no server) with deterministic settings.
